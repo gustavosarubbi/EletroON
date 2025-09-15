@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  role      String   @default("USER")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  devices   Device[]
+}
+
+model Device {
+  meterId   Int       @id
+  name      String
+  location  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    Int?
+  user      User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  readings  Reading[]
+}
+
+model Reading {
+  id        Int      @id @default(autoincrement())
+  timestamp DateTime
+  pa        Float
+  pb        Float
+  pc        Float
+  pt        Float
+  qa        Float
+  qb        Float
+  qc        Float
+  qt        Float
+  epa_c     Float
+  epb_c     Float
+  epc_c     Float
+  ept_c     Float
+  epa_g     Float
+  epb_g     Float
+  epc_g     Float
+  ept_g     Float
+  iarms     Float
+  ibrms     Float
+  icrms     Float
+  uarms     Float
+  ubrms     Float
+  ucrms     Float
+  pfa       Float
+  pfb       Float
+  pfc       Float
+  pft       Float
+  createdAt DateTime @default(now())
+  meterId   Int
+  device    Device   @relation(fields: [meterId], references: [meterId], onDelete: Cascade)
+
+  @@index([meterId, timestamp])
+  @@index([timestamp])
+}

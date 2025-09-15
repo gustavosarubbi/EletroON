@@ -1,0 +1,119 @@
+name: 🧹 Verificação de Organização do Projeto
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Executar toda segunda-feira às 9h
+    - cron: '0 9 * * 1'
+
+jobs:
+  check-organization:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout do código
+      uses: actions/checkout@v4
+      
+    - name: 🔍 Verificar estrutura de pastas
+      run: |
+        echo "🔍 Verificando estrutura do projeto..."
+        
+        # Verificar se a raiz está limpa
+        echo "📁 Verificando arquivos na raiz..."
+        root_files=$(find . -maxdepth 1 -type f -name "*.js" -o -name "*.ts" -o -name "*.sql" | grep -v "README.md" | grep -v "CREDENCIAIS.md" | grep -v "DEPLOYMENT_GUIDE.md" | grep -v "docker-compose.yml" | grep -v "nginx.conf" | grep -v "start.ps1" | grep -v "start.sh")
+        
+        if [ -n "$root_files" ]; then
+          echo "❌ Arquivos JavaScript/TypeScript/SQL encontrados na raiz:"
+          echo "$root_files"
+          echo "💡 Estes arquivos devem ser movidos para suas respectivas pastas"
+          exit 1
+        else
+          echo "✅ Raiz está limpa e organizada"
+        fi
+        
+        # Verificar se scripts estão na pasta correta
+        echo "🔧 Verificando scripts..."
+        if [ ! -d "api-eletroon/scripts" ]; then
+          echo "❌ Pasta scripts não encontrada em api-eletroon/"
+          exit 1
+        fi
+        
+        # Verificar se arquivos SQL estão na pasta correta
+        echo "🗄️ Verificando arquivos SQL..."
+        sql_files=$(find . -name "*.sql" -not -path "./api-eletroon/prisma/*")
+        if [ -n "$sql_files" ]; then
+          echo "❌ Arquivos SQL encontrados fora de api-eletroon/prisma/:"
+          echo "$sql_files"
+          echo "💡 Estes arquivos devem ser movidos para api-eletroon/prisma/"
+          exit 1
+        else
+          echo "✅ Arquivos SQL estão organizados"
+        fi
+        
+        # Verificar se medidor artificial está organizado
+        echo "🔌 Verificando medidor artificial..."
+        if [ ! -f "medidor-artificial-teste/server.js" ]; then
+          echo "❌ server.js não encontrado em medidor-artificial-teste/"
+          exit 1
+        fi
+        
+        if [ ! -f "medidor-artificial-teste/test-api.js" ]; then
+          echo "❌ test-api.js não encontrado em medidor-artificial-teste/"
+          exit 1
+        fi
+        
+        echo "✅ Medidor artificial está organizado"
+        
+        echo "🎉 Verificação de organização concluída com sucesso!"
+        
+    - name: 📊 Gerar relatório de organização
+      run: |
+        echo "📊 Relatório de Organização do Projeto EletroON"
+        echo "=============================================="
+        echo ""
+        echo "📁 Estrutura de Pastas:"
+        echo "├── api-eletroon/"
+        echo "│   ├── scripts/          - Scripts utilitários e testes"
+        echo "│   ├── prisma/           - Schema e queries SQL"
+        echo "│   └── src/              - Código fonte do backend"
+        echo "├── eletroon-frontend/    - Interface web"
+        echo "├── medidor-artificial-teste/ - Simulador para testes"
+        echo "└── [documentação]       - READMEs e configurações"
+        echo ""
+        echo "🔧 Scripts Organizados:"
+        ls -la api-eletroon/scripts/ | grep "\.js$" | wc -l | xargs echo "   Total de scripts:"
+        echo ""
+        echo "🗄️ Arquivos SQL Organizados:"
+        ls -la api-eletroon/prisma/ | grep "\.sql$" | wc -l | xargs echo "   Total de queries:"
+        echo ""
+        echo "✅ Organização verificada e aprovada!"
+        
+    - name: 🎯 Comentário no PR
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: `## 🧹 Verificação de Organização ✅
+            
+            A organização do projeto foi verificada e está **aprovada**!
+            
+            ### 📁 Estrutura Verificada:
+            - ✅ Scripts organizados em \`api-eletroon/scripts/\`
+            - ✅ Queries SQL organizadas em \`api-eletroon/prisma/\`
+            - ✅ Medidor artificial organizado em \`medidor-artificial-teste/\`
+            - ✅ Raiz limpa com apenas documentação e configuração
+            
+            ### 🎯 Próximos Passos:
+            - Manter esta organização ao adicionar novos arquivos
+            - Usar as pastas apropriadas para cada tipo de arquivo
+            - Seguir os padrões estabelecidos
+            
+            **Organização do projeto está impecável! 🎉**`
+          })

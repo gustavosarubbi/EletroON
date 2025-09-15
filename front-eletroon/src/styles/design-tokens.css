@@ -1,0 +1,330 @@
+/* ===== DESIGN TOKENS - SISTEMA DE DESIGN CONSISTENTE ===== */
+/* ⚠️ IMPORTANTE: Este projeto usa pnpm para gerenciamento de pacotes */
+
+/* ===== SISTEMA DE CORES ===== */
+
+/* Cores primárias */
+:root {
+  /* Azul corporativo principal */
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-200: #bfdbfe;
+  --color-primary-300: #93c5fd;
+  --color-primary-400: #60a5fa;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+  --color-primary-800: #1e40af;
+  --color-primary-900: #1e3a8a;
+  --color-primary-950: #172554;
+
+  /* Azul EletroON específico */
+  --color-eletroon-50: #f0f9ff;
+  --color-eletroon-100: #e0f2fe;
+  --color-eletroon-200: #bae6fd;
+  --color-eletroon-300: #7dd3fc;
+  --color-eletroon-400: #38bdf8;
+  --color-eletroon-500: #0ea5e9;
+  --color-eletroon-600: #0284c7;
+  --color-eletroon-700: #0369a1;
+  --color-eletroon-800: #075985;
+  --color-eletroon-900: #0c4a6e;
+  --color-eletroon-950: #082f49;
+
+  /* Cores neutras */
+  --color-neutral-50: #f8fafc;
+  --color-neutral-100: #f1f5f9;
+  --color-neutral-200: #e2e8f0;
+  --color-neutral-300: #cbd5e1;
+  --color-neutral-400: #94a3b8;
+  --color-neutral-500: #64748b;
+  --color-neutral-600: #475569;
+  --color-neutral-700: #334155;
+  --color-neutral-800: #1e293b;
+  --color-neutral-900: #0f172a;
+  --color-neutral-950: #020617;
+
+  /* Cores semânticas */
+  --color-success-50: #f0fdf4;
+  --color-success-500: #22c55e;
+  --color-success-600: #16a34a;
+  --color-success-700: #15803d;
+
+  --color-warning-50: #fffbeb;
+  --color-warning-500: #f59e0b;
+  --color-warning-600: #d97706;
+  --color-warning-700: #b45309;
+
+  --color-error-50: #fef2f2;
+  --color-error-500: #ef4444;
+  --color-error-600: #dc2626;
+  --color-error-700: #b91c1c;
+
+  /* Cores específicas do projeto */
+  --color-eletroon-brand: #002495;
+  --color-eletroon-dark: #020a29;
+  --color-eletroon-accent: #0066cc;
+  --color-eletroon-light: #1e88e5;
+  --color-eletroon-bright: #42a5f5;
+}
+
+/* ===== SISTEMA DE ESPAÇAMENTO ===== */
+
+:root {
+  /* Base de 4px para consistência */
+  --spacing-0: 0;
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-3: 12px;
+  --spacing-4: 16px;
+  --spacing-5: 20px;
+  --spacing-6: 24px;
+  --spacing-8: 32px;
+  --spacing-10: 40px;
+  --spacing-12: 48px;
+  --spacing-16: 64px;
+  --spacing-20: 80px;
+  --spacing-24: 96px;
+  --spacing-32: 128px;
+}
+
+/* ===== SISTEMA DE TIPOGRAFIA ===== */
+
+:root {
+  /* Famílias de fonte */
+  --font-family-primary: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-family-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+
+  /* Tamanhos de fonte */
+  --font-size-xs: 12px;
+  --font-size-sm: 14px;
+  --font-size-base: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 24px;
+  --font-size-3xl: 30px;
+  --font-size-4xl: 36px;
+  --font-size-5xl: 48px;
+  --font-size-6xl: 60px;
+
+  /* Pesos de fonte */
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+  --font-weight-black: 900;
+
+  /* Altura de linha */
+  --line-height-tight: 1.25;
+  --line-height-snug: 1.375;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.625;
+  --line-height-loose: 2;
+
+  /* Espaçamento entre letras */
+  --letter-spacing-tighter: -0.05em;
+  --letter-spacing-tight: -0.025em;
+  --letter-spacing-normal: 0em;
+  --letter-spacing-wide: 0.025em;
+  --letter-spacing-wider: 0.05em;
+  --letter-spacing-widest: 0.1em;
+}
+
+/* ===== SISTEMA DE SOMBRAS ===== */
+
+:root {
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05);
+}
+
+/* ===== SISTEMA DE BORDAS ===== */
+
+:root {
+  --border-radius-none: 0;
+  --border-radius-sm: 4px;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+  --border-radius-xl: 16px;
+  --border-radius-2xl: 20px;
+  --border-radius-3xl: 24px;
+  --border-radius-full: 9999px;
+
+  --border-width-0: 0;
+  --border-width-1: 1px;
+  --border-width-2: 2px;
+  --border-width-4: 4px;
+  --border-width-8: 8px;
+}
+
+/* ===== SISTEMA DE TRANSIÇÕES ===== */
+
+:root {
+  --transition-fast: 150ms ease-in-out;
+  --transition-normal: 250ms ease-in-out;
+  --transition-slow: 350ms ease-in-out;
+  --transition-slower: 500ms ease-in-out;
+
+  --ease-linear: linear;
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Curvas de easing específicas para micro-interações */
+  --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --ease-elastic: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --ease-smooth: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* ===== SISTEMA DE ANIMAÇÕES ===== */
+
+:root {
+  /* Durações de animação */
+  --animation-duration-fast: 200ms;
+  --animation-duration-normal: 300ms;
+  --animation-duration-slow: 500ms;
+  
+  /* Delays para sequências */
+  --animation-delay-1: 100ms;
+  --animation-delay-2: 200ms;
+  --animation-delay-3: 300ms;
+  
+  /* Estados de loading */
+  --loading-opacity: 0.6;
+  --loading-scale: 0.98;
+  --loading-blur: 1px;
+}
+
+/* ===== SISTEMA DE Z-INDEX ===== */
+
+:root {
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-modal-backdrop: 1040;
+  --z-modal: 1050;
+  --z-popover: 1060;
+  --z-tooltip: 1070;
+  --z-toast: 1080;
+}
+
+/* ===== UTILITÁRIOS ===== */
+
+/* Classes utilitárias para espaçamento */
+.mt-0 { margin-top: var(--spacing-0); }
+.mt-1 { margin-top: var(--spacing-1); }
+.mt-2 { margin-top: var(--spacing-2); }
+.mt-3 { margin-top: var(--spacing-3); }
+.mt-4 { margin-top: var(--spacing-4); }
+.mt-5 { margin-top: var(--spacing-5); }
+.mt-6 { margin-top: var(--spacing-6); }
+
+.mb-0 { margin-bottom: var(--spacing-0); }
+.mb-1 { margin-bottom: var(--spacing-1); }
+.mb-2 { margin-bottom: var(--spacing-2); }
+.mb-3 { margin-bottom: var(--spacing-3); }
+.mb-4 { margin-bottom: var(--spacing-4); }
+.mb-5 { margin-bottom: var(--spacing-5); }
+.mb-6 { margin-bottom: var(--spacing-6); }
+
+.p-0 { padding: var(--spacing-0); }
+.p-1 { padding: var(--spacing-1); }
+.p-2 { padding: var(--spacing-2); }
+.p-3 { padding: var(--spacing-3); }
+.p-4 { padding: var(--spacing-4); }
+.p-5 { padding: var(--spacing-5); }
+.p-6 { padding: var(--spacing-6); }
+
+/* Classes utilitárias para cores */
+.text-primary { color: var(--color-eletroon-brand); }
+.text-secondary { color: var(--color-eletroon-dark); }
+.text-accent { color: var(--color-eletroon-accent); }
+.text-neutral { color: var(--color-neutral-600); }
+.text-success { color: var(--color-success-600); }
+.text-warning { color: var(--color-warning-600); }
+.text-error { color: var(--color-error-600); }
+
+.bg-primary { background-color: var(--color-eletroon-brand); }
+.bg-secondary { background-color: var(--color-eletroon-dark); }
+.bg-accent { background-color: var(--color-eletroon-accent); }
+.bg-neutral { background-color: var(--color-neutral-100); }
+.bg-success { background-color: var(--color-success-50); }
+.bg-warning { background-color: var(--color-warning-50); }
+.bg-error { background-color: var(--color-error-50); }
+
+/* Classes utilitárias para bordas */
+.border-radius-sm { border-radius: var(--border-radius-sm); }
+.border-radius-md { border-radius: var(--border-radius-md); }
+.border-radius-lg { border-radius: var(--border-radius-lg); }
+.border-radius-xl { border-radius: var(--border-radius-xl); }
+
+.border-width-1 { border-width: var(--border-width-1); }
+.border-width-2 { border-width: var(--border-width-2); }
+
+/* Classes utilitárias para sombras */
+.shadow-sm { box-shadow: var(--shadow-sm); }
+.shadow-md { box-shadow: var(--shadow-md); }
+.shadow-lg { box-shadow: var(--shadow-lg); }
+.shadow-xl { box-shadow: var(--shadow-xl); }
+.shadow-inner { box-shadow: var(--shadow-inner); }
+
+/* Classes utilitárias para transições */
+.transition-fast { transition: all var(--transition-fast); }
+.transition-normal { transition: all var(--transition-normal); }
+.transition-slow { transition: all var(--transition-slow); }
+
+/* Classes utilitárias para animações */
+.animate-fade-in { animation: fadeIn var(--animation-duration-normal) var(--ease-smooth); }
+.animate-slide-up { animation: slideUp var(--animation-duration-normal) var(--ease-smooth); }
+.animate-scale-in { animation: scaleIn var(--animation-duration-normal) var(--ease-bounce); }
+.animate-pulse { animation: pulse 2s var(--ease-in-out) infinite; }
+
+/* Estados de loading */
+.loading {
+  opacity: var(--loading-opacity);
+  transform: scale(var(--loading-scale));
+  filter: blur(var(--loading-blur));
+  pointer-events: none;
+  transition: all var(--transition-normal);
+}
+
+.loading-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  border-top-color: transparent;
+  animation: spin 1s linear infinite;
+}
+
+/* Animações keyframes */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

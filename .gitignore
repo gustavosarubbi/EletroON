@@ -1,0 +1,104 @@
+# 🚀 EletroON - .gitignore
+
+# 📦 Dependências
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# 🏗️ Build e Distribuição
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# 🔧 Arquivos de Configuração Local
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# 🗄️ Banco de Dados
+*.db
+*.sqlite
+*.sqlite3
+prisma/migrations/
+
+# 📊 Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# 🧪 Testes
+coverage/
+.nyc_output/
+.jest/
+
+# 🐳 Docker
+.dockerignore
+docker-compose.override.yml
+
+# 🔒 SSL e Certificados
+ssl/
+*.pem
+*.key
+*.crt
+*.p12
+
+# 💻 IDEs e Editores
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 🖥️ Sistema Operacional
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 📁 Arquivos Temporários
+*.tmp
+*.temp
+.cache/
+.temp/
+
+# 🚨 Arquivos de Segurança
+*.env
+.env.*
+!.env.example
+
+# 📋 Arquivos de Backup
+*.backup
+*.bak
+*.old
+
+# 🔍 Arquivos de Debug
+debug.log
+debug-*.log
+
+# 📊 Arquivos de Dados Temporários
+*.csv
+!api-eletroon/scripts/teste_export.csv
+*.xlsx
+*.xls
+
+# 🧹 Arquivos de Limpeza
+cleanup-*.log
+reset-*.log
+
+# 📝 Arquivos de Documentação Temporários
+*.md~
+*.md.bak
+temp-*.md

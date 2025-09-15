@@ -1,0 +1,109 @@
+/* ⚠️ IMPORTANTE: Este projeto usa pnpm para gerenciamento de pacotes */
+
+/* Import Dashboard Styles */
+@import './styles/components/Dashboard.css';
+
+#root {
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 0;
+  text-align: left;
+}
+
+.App {
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* Dashboard placeholder */
+.dashboard-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 80vh;
+  padding: 2rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.dashboard-placeholder h1 {
+  color: #1e293b;
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.dashboard-placeholder p {
+  color: #64748b;
+  font-size: 1.1rem;
+  font-weight: 500;
+  max-width: 600px;
+  line-height: 1.6;
+}
+
+/* Loading container para ProtectedRoute */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e2e8f0;
+  border-top: 4px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-container p {
+  color: #64748b;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .dashboard-placeholder {
+    padding: 1.5rem;
+    margin: 1rem;
+  }
+  
+  .dashboard-placeholder h1 {
+    font-size: 2rem;
+  }
+  
+  .dashboard-placeholder p {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-placeholder {
+    padding: 1rem;
+    margin: 0.5rem;
+  }
+  
+  .dashboard-placeholder h1 {
+    font-size: 1.75rem;
+  }
+  
+  .dashboard-placeholder p {
+    font-size: 0.95rem;
+  }
+
+
+}

@@ -1,0 +1,53 @@
+/* ⚠️ IMPORTANTE: Este projeto usa pnpm para gerenciamento de pacotes */
+
+/* TÍTULO ELETROON - DESIGN MODERNO */
+.eletroon-title {
+  /* GRADIENTE MODERNO */
+  background: linear-gradient(135deg, #ffffff 0%, #e2e8f0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  
+  /* FONTE - PESO MÁXIMO */
+  font-family: 'Nunito', sans-serif;
+  font-size: 36px;
+  font-weight: 800;
+  font-style: normal;
+  
+  /* SOMBRA PARA GROSSURA */
+  text-shadow: 
+    0 0 1px rgba(255, 255, 255, 0.3),
+    0 0 2px rgba(255, 255, 255, 0.2);
+  
+  /* LAYOUT */
+  margin: 0;
+  padding: 0;
+  text-align: center;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  
+  /* POSICIONAMENTO */
+  display: block;
+  position: relative;
+  z-index: 1000;
+  
+  /* RESET */
+  text-decoration: none;
+  text-transform: none;
+  border: none;
+  outline: none;
+  box-shadow: none;
+}
+
+/* RESPONSIVIDADE */
+@media (max-width: 768px) {
+  .eletroon-title {
+    font-size: 32px;
+  }
+}
+
+@media (max-width: 480px) {
+  .eletroon-title {
+    font-size: 28px;
+  }
+}

@@ -78,6 +78,16 @@ Thumbs.db
 *.env
 .env.*
 !.env.example
+!env.example
+
+# 🔐 Credenciais e Senhas
+*password*
+*senha*
+*secret*
+*key*
+*credential*
+CREDENCIAIS.md
+!CREDENCIAIS.md
 
 # 📋 Arquivos de Backup
 *.backup

@@ -1,16 +1,20 @@
-y# 🔐 Credenciais e Configurações do Sistema EletroON
+y# 🔐 Configurações do Sistema EletroON
+
+## ⚠️ **IMPORTANTE: SEGURANÇA**
+
+**NUNCA** commite credenciais reais no Git! Use variáveis de ambiente.
 
 ## 👤 **Usuários Padrão**
 
 ### **Administrador**
-- **Email**: `admin@eletroon.com`
-- **Senha**: `admin123`
+- **Email**: Configurado via `DEFAULT_ADMIN_EMAIL`
+- **Senha**: Configurada via `DEFAULT_ADMIN_PASSWORD`
 - **Role**: `ADMIN`
 - **Acesso**: Todas as funcionalidades
 
 ### **Usuário Comum**
-- **Email**: `usuario@eletroon.com`
-- **Senha**: `usuario123`
+- **Email**: Configurado via `DEFAULT_USER_EMAIL`
+- **Senha**: Configurada via `DEFAULT_USER_PASSWORD`
 - **Role**: `USER`
 - **Acesso**: Funcionalidades limitadas
 
@@ -62,18 +66,18 @@ Backend:  http://localhost:3000
 
 ## 📝 **Variáveis de Ambiente**
 
-### **Backend**
+### **Backend (.env)**
 ```env
-DATABASE_URL=postgresql://postgres:eletroon123@db:5432/eletroon
-JWT_SECRET=eletroon-jwt-secret-docker
+DATABASE_URL=postgresql://postgres:SUA_SENHA_DB@db:5432/eletroon
+JWT_SECRET=seu-jwt-secret-super-seguro-aqui
 JWT_EXPIRATION_TIME=24h
 CORS_ORIGINS=*
 
 # Usuários padrão (personalizáveis)
-DEFAULT_ADMIN_EMAIL=admin@eletroon.com
-DEFAULT_ADMIN_PASSWORD=admin123
-DEFAULT_USER_EMAIL=usuario@eletroon.com
-DEFAULT_USER_PASSWORD=usuario123
+DEFAULT_ADMIN_EMAIL=admin@seudominio.com
+DEFAULT_ADMIN_PASSWORD=SUA_SENHA_ADMIN_SEGURA
+DEFAULT_USER_EMAIL=usuario@seudominio.com
+DEFAULT_USER_PASSWORD=SUA_SENHA_USER_SEGURA
 ```
 
 ### **Frontend**
@@ -86,7 +90,7 @@ NEXT_PUBLIC_API_URL=http://localhost:3000/api # Local
 
 ### **Opção 1: Variáveis de Ambiente**
 ```bash
-# No arquivo .env ou docker-compose.yml
+# No arquivo .env (NUNCA commite este arquivo!)
 DEFAULT_ADMIN_EMAIL=meuadmin@empresa.com
 DEFAULT_ADMIN_PASSWORD=MinhaSenha123!
 DEFAULT_USER_EMAIL=usuario@empresa.com
@@ -99,13 +103,13 @@ node scripts/configure-users.js
 ```
 O script pergunta cada configuração e aplica automaticamente.
 
-### **Opção 3: Docker Compose**
+### **Opção 3: Docker Compose (usando .env)**
 ```yaml
 environment:
-  - DEFAULT_ADMIN_EMAIL=admin@meudominio.com
-  - DEFAULT_ADMIN_PASSWORD=SenhaAdmin456!
-  - DEFAULT_USER_EMAIL=usuario@meudominio.com
-  - DEFAULT_USER_PASSWORD=SenhaUsuario789!
+  - DEFAULT_ADMIN_EMAIL=${DEFAULT_ADMIN_EMAIL}
+  - DEFAULT_ADMIN_PASSWORD=${DEFAULT_ADMIN_PASSWORD}
+  - DEFAULT_USER_EMAIL=${DEFAULT_USER_EMAIL}
+  - DEFAULT_USER_PASSWORD=${DEFAULT_USER_PASSWORD}
 ```
 
 ## 🧪 **Testando o Sistema**
@@ -133,9 +137,9 @@ curl http://localhost:3000/api/docs
 
 ### **4. Testar Login**
 ```bash
-# Usar as credenciais padrão
-Email: admin@eletroon.com
-Senha: admin123
+# Usar as credenciais configuradas no .env
+Email: [configurado em DEFAULT_ADMIN_EMAIL]
+Senha: [configurada em DEFAULT_ADMIN_PASSWORD]
 ```
 
 ## 🔄 **Gerenciar Usuários**
@@ -143,7 +147,8 @@ Senha: admin123
 ### **1. Configuração Interativa (Recomendado)**
 ```bash
 cd api-eletroon
-$env:DATABASE_URL="postgresql://postgres:eletroon123@localhost:5432/eletroon"
+# Configure primeiro o .env com suas credenciais
+$env:DATABASE_URL="postgresql://postgres:SUA_SENHA_DB@localhost:5432/eletroon"
 node scripts/configure-users.js
 ```
 Este script permite configurar interativamente:
@@ -154,7 +159,7 @@ Este script permite configurar interativamente:
 ### **2. Reset de Senhas**
 ```bash
 cd api-eletroon
-$env:DATABASE_URL="postgresql://postgres:eletroon123@localhost:5432/eletroon"
+$env:DATABASE_URL="postgresql://postgres:SUA_SENHA_DB@localhost:5432/eletroon"
 node scripts/reset-passwords.js
 ```
 Redefine senhas usando as configurações das variáveis de ambiente.

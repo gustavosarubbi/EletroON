@@ -37,8 +37,8 @@ function Test-Dependencies {
         exit 1
     }
     
-    if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
-        Write-Error "npm não está instalado"
+    if (-not (Get-Command pnpm -ErrorAction SilentlyContinue)) {
+        Write-Error "pnpm não está instalado. Instale com: npm install -g pnpm"
         exit 1
     }
     
@@ -57,18 +57,18 @@ function Initialize-Environment {
     Write-Info "Configurando ambiente..."
     
     # Verificar se arquivos .env existem
-    if (-not (Test-Path "api-eletroon\.env")) {
+    if (-not (Test-Path "backend\.env")) {
         Write-Warning "Arquivo .env não encontrado no backend"
         Write-Info "Copiando env.example para .env..."
-        Copy-Item "api-eletroon\env.example" "api-eletroon\.env"
-        Write-Warning "Configure o arquivo api-eletroon\.env antes de continuar"
+        Copy-Item "env.example" "backend\.env"
+        Write-Warning "Configure o arquivo backend\.env antes de continuar"
     }
     
-    if (-not (Test-Path "front-eletroon\.env.local")) {
+    if (-not (Test-Path "frontend\.env.local")) {
         Write-Warning "Arquivo .env.local não encontrado no frontend"
-        Write-Info "Copiando env.example para .env.local..."
-        Copy-Item "front-eletroon\env.example" "front-eletroon\.env.local"
-        Write-Warning "Configure o arquivo front-eletroon\.env.local antes de continuar"
+        Write-Info "Criando .env.local para o frontend..."
+        "@`nNEXT_PUBLIC_API_URL=http://localhost:3000/api`n" | Out-File -FilePath "frontend\.env.local" -Encoding UTF8
+        Write-Warning "Configure o arquivo frontend\.env.local antes de continuar"
     }
     
     Write-Info "Ambiente configurado"
@@ -80,10 +80,10 @@ function Start-LocalDeploy {
     
     # Backend
     Write-Info "Iniciando backend..."
-    Set-Location "api-eletroon"
-    npm install
-    npm run build
-    Start-Process -NoNewWindow -FilePath "npm" -ArgumentList "run", "start:prod"
+    Set-Location "backend"
+    pnpm install
+    pnpm run build
+    Start-Process -NoNewWindow -FilePath "pnpm" -ArgumentList "run", "start:prod"
     Set-Location ".."
     
     # Aguardar backend inicializar
@@ -91,15 +91,15 @@ function Start-LocalDeploy {
     
     # Frontend
     Write-Info "Iniciando frontend..."
-    Set-Location "front-eletroon"
-    npm install
-    npm run build
-    Start-Process -NoNewWindow -FilePath "npm" -ArgumentList "run", "start:prod"
+    Set-Location "frontend"
+    pnpm install
+    pnpm run build
+    Start-Process -NoNewWindow -FilePath "pnpm" -ArgumentList "run", "preview"
     Set-Location ".."
     
     Write-Info "Deploy local concluído!"
     Write-Info "Backend rodando em: http://localhost:3000"
-    Write-Info "Frontend rodando em: http://localhost:3001"
+    Write-Info "Frontend rodando em: http://localhost:4173 (vite preview)"
     Write-Info "Documentação da API: http://localhost:3000/api/docs"
     
     Write-Info "Para parar as aplicações, feche os terminais ou use Ctrl+C"

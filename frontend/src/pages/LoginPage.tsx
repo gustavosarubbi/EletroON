@@ -1,15 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Eye, EyeOff, AlertTriangle, Brain, Star, Shield, Mail, Lock } from 'lucide-react';
+import { Eye, EyeOff, AlertTriangle, Mail, Lock } from 'lucide-react';
 import Button from '../components/ui/Button';
 import LoadingOverlay from '../components/ui/LoadingOverlay';
 import ToastContainer from '../components/ui/ToastContainer';
 import LoginParticles from '../components/ui/LoginParticles';
 import { useToast } from '../hooks/useToast';
-// CSS imports are now handled by the main index.css file
-
-// ⚠️ IMPORTANTE: Este projeto usa pnpm para gerenciamento de pacotes
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -31,23 +28,20 @@ const LoginPage: React.FC = () => {
       if (from) {
         navigate(from, { replace: true });
       } else {
-        // Redirecionar baseado no role do usuário
         const redirectPath = user.role === 'admin' ? '/admin/dashboard' : '/dashboard';
         navigate(redirectPath, { replace: true });
       }
     }
   }, [isAuthenticated, user, navigate, location]);
 
-  // Limpar erro apenas quando o usuário começar a digitar (não durante o login)
+  // Limpar erro quando o usuário começar a digitar
   useEffect(() => {
     if (error && !isSubmitting) {
-      // Limpar o erro apenas quando o usuário começar a digitar ativamente
       const timer = setTimeout(() => {
         if (email || password) {
           clearError();
         }
-      }, 2000); // Delay maior para dar tempo de ler a mensagem
-      
+      }, 2000);
       return () => clearTimeout(timer);
     }
   }, [email, password, error, clearError, isSubmitting]);
@@ -82,7 +76,7 @@ const LoginPage: React.FC = () => {
     e.preventDefault();
     
     if (!email || !password) {
-      return; // Validação será feita pelos tooltips
+      return;
     }
 
     setIsSubmitting(true);
@@ -92,7 +86,6 @@ const LoginPage: React.FC = () => {
       const response = await login({ email, password });
       console.log('✅ Login bem-sucedido! Redirecionando...');
       
-      // Determinar o caminho de redirecionamento baseado no role
       const redirectPath = response.user.role === 'admin' ? '/admin/dashboard' : '/dashboard';
       const redirectMessage = response.user.role === 'admin' 
         ? 'Redirecionando para o painel administrativo...' 
@@ -103,7 +96,6 @@ const LoginPage: React.FC = () => {
     } catch (err: unknown) {
       console.error('❌ Erro no login:', err);
       
-      // Mostrar toast de erro
       if (err instanceof Error) {
         showError('Erro no login', err.message, 1000);
       } else {
@@ -119,145 +111,120 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="login-container">
-      {/* Partículas modernas animadas */}
+    <div className="login-page-container">
+      {/* Partículas animadas de fundo */}
       <LoginParticles />
 
-      {/* Card de Login */}
-      <div className="login-card">
-        {/* Header do Login */}
-        <div className="login-header">
-          <div className="logo-container">
+      {/* Card de Login Principal */}
+      <div className="login-page-card">
+        {/* Header com Logo e Título */}
+        <div className="login-page-header">
+          <div className="login-page-logo-wrapper">
+            <div className="login-page-logo-glow"></div>
             <img 
               src="/logo_eletroon.png" 
               alt="EletroON Logo" 
-              className="logo"
+              className="login-page-logo"
             />
           </div>
-          <h1 className="eletroon-title">EletroON</h1>
+          <h1 className="login-page-title">
+            <span className="login-page-title-main">Eletro</span>
+            <span className="login-page-title-accent">ON</span>
+          </h1>
+          <p className="login-page-subtitle">Sistema Inteligente de Gestão Energética</p>
         </div>
 
-        {/* Bloco com 3 ícones e palavras em linha */}
-        <div className="features-inline">
-          <div className="feature-inline-item">
-            <div className="feature-icon">
-              <Brain size={16} />
-            </div>
-            <span className="feature-text">Inteligente</span>
-          </div>
-          
-          <span className="separator">•</span>
-          
-          <div className="feature-inline-item">
-            <div className="feature-icon">
-              <Star size={16} />
-            </div>
-            <span className="feature-text">Moderno</span>
-          </div>
-          
-          <span className="separator">•</span>
-          
-          <div className="feature-inline-item">
-            <div className="feature-icon">
-              <Shield size={16} />
-            </div>
-            <span className="feature-text">Seguro</span>
-          </div>
-        </div>
-
-        {/* Texto de login abaixo dos ícones */}
-        <p className="login-subtitle-below-icons">Faça login para acessar o sistema</p>
-
-        {/* Divider antes do formulário */}
-        <div className="form-divider"></div>
+        {/* Divider */}
+        <div className="login-page-divider"></div>
 
         {/* Formulário de Login */}
-        <form onSubmit={handleSubmit} className="login-form">
+        <form onSubmit={handleSubmit} className="login-page-form">
           {error && (
-            <div className="error-message">
-              <AlertTriangle size={14} />
+            <div className="login-page-error">
+              <AlertTriangle size={18} />
               <span>{error}</span>
             </div>
           )}
 
-          <div className="form-group">
-            <label htmlFor="email" className="form-label-with-icon">
-              <Mail size={16} />
+          {/* Campo Email */}
+          <div className="login-page-field">
+            <label htmlFor="email" className="login-page-label">
+              <Mail size={18} />
               <span>E-mail</span>
             </label>
-                          <input
+            <div className="login-page-input-wrapper">
+              <input
                 type="email"
                 id="email"
                 value={email}
                 onChange={handleEmailChange}
-                placeholder="Digite seu e-mail"
+                placeholder="seu@email.com"
                 required
                 disabled={isSubmitting}
-                className={emailError ? 'invalid' : email && !emailError ? 'valid' : ''}
+                className={`login-page-input ${emailError ? 'error' : email && !emailError ? 'valid' : ''}`}
               />
-              {emailError && (
-                <div className="validation-message error">
-                  <span>{emailError}</span>
-                </div>
-              )}
             </div>
+            {emailError && (
+              <div className="login-page-validation-error">
+                {emailError}
+              </div>
+            )}
+          </div>
 
-          <div className="form-group">
-            <label htmlFor="password" className="form-label-with-icon">
-              <Lock size={16} />
+          {/* Campo Senha */}
+          <div className="login-page-field">
+            <label htmlFor="password" className="login-page-label">
+              <Lock size={18} />
               <span>Senha</span>
             </label>
-            <div className="password-input-container">
+            <div className="login-page-input-wrapper">
               <input
                 type={showPassword ? 'text' : 'password'}
                 id="password"
                 value={password}
                 onChange={handlePasswordChange}
-                placeholder="Digite sua senha"
+                placeholder="••••••••"
                 required
                 disabled={isSubmitting}
-                className={passwordError ? 'invalid' : password && !passwordError ? 'valid' : ''}
+                className={`login-page-input ${passwordError ? 'error' : password && !passwordError ? 'valid' : ''}`}
               />
-              
               <button
                 type="button"
-                className="password-toggle"
+                className="login-page-password-toggle"
                 onClick={togglePasswordVisibility}
                 disabled={isSubmitting}
+                aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
               >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
             {passwordError && (
-              <div className="validation-message error">
-                <span>{passwordError}</span>
+              <div className="login-page-validation-error">
+                {passwordError}
               </div>
             )}
           </div>
 
+          {/* Botão de Login */}
           <Button
             type="submit"
             variant="primary"
             size="lg"
             loading={isSubmitting}
-            disabled={!email || !password}
-            className="login-button"
+            disabled={!email || !password || !!emailError || !!passwordError}
+            className="login-page-button"
           >
             {isSubmitting ? 'Entrando...' : 'Entrar'}
           </Button>
         </form>
 
-        {/* Divider antes do footer */}
-        <div className="login-divider"></div>
-
-
-        {/* Footer do Login */}
-        <div className="login-footer">
+        {/* Footer */}
+        <div className="login-page-footer">
           <p>&copy; 2025 EletroON. Todos os direitos reservados.</p>
         </div>
       </div>
       
-      {/* Loading Overlay para operações de loading */}
+      {/* Loading Overlay */}
       <LoadingOverlay 
         isVisible={isSubmitting}
         text="Entrando no sistema..."
@@ -265,7 +232,7 @@ const LoginPage: React.FC = () => {
         size="lg"
       />
       
-      {/* Container de Toasts para feedback visual */}
+      {/* Toast Container */}
       <ToastContainer 
         toasts={toasts}
         onRemoveToast={removeToast}

@@ -12,7 +12,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./api-eletroon/prisma/migrations:/docker-entrypoint-initdb.d
+      - ./backend/prisma/migrations:/docker-entrypoint-initdb.d
     ports:
       - "5432:5432"
     networks:
@@ -33,7 +33,7 @@ services:
   # Backend API
   backend:
     build: 
-      context: ./api-eletroon
+      context: ./backend
       dockerfile: Dockerfile
       target: production
     container_name: eletroon-backend
@@ -57,7 +57,7 @@ services:
     networks:
       - eletroon-network
     volumes:
-      - ./api-eletroon/prisma:/app/prisma
+      - ./backend/prisma:/app/prisma
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
       interval: 30s
@@ -74,7 +74,7 @@ services:
   # Frontend
   frontend:
     build: 
-      context: ./front-eletroon
+      context: ./frontend
       dockerfile: Dockerfile
     container_name: eletroon-frontend
     restart: unless-stopped

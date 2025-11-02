@@ -15,10 +15,11 @@ export class UsersService implements OnModuleInit {
 
   private async createDefaultUsers() {
     try {
-      const adminEmail = process.env.DEFAULT_ADMIN_EMAIL || 'admin@eletroon.com';
+      // Normalizar emails para lowercase
+      const adminEmail = (process.env.DEFAULT_ADMIN_EMAIL || 'admin@eletroon.com').toLowerCase().trim();
       const adminPassword = process.env.DEFAULT_ADMIN_PASSWORD || 'admin123';
-      const userEmail = process.env.DEFAULT_USER_EMAIL || 'usuario@eletroon.com';
-      const userPassword = process.env.DEFAULT_USER_PASSWORD || 'usuario123';
+      const userEmail = (process.env.DEFAULT_USER_EMAIL || 'usuario@eletroon.com').toLowerCase().trim();
+      const userPassword = process.env.DEFAULT_USER_PASSWORD || 'User@123';
 
       // Verificar se admin já existe
       const existingAdmin = await this.prisma.user.findUnique({
@@ -35,6 +36,23 @@ export class UsersService implements OnModuleInit {
           },
         });
         this.logger.log(`Usuário admin criado: ${adminEmail}`);
+      } else {
+        // Verificar se a senha atual funciona
+        const isPasswordValid = await bcrypt.compare(adminPassword, existingAdmin.password);
+        if (!isPasswordValid) {
+          // Só atualiza se a senha não estiver correta
+          this.logger.warn(`⚠️ Senha do admin não corresponde, atualizando...`);
+          const hashedAdminPassword = await bcrypt.hash(adminPassword, 10);
+          await this.prisma.user.update({
+            where: { email: adminEmail },
+            data: {
+              password: hashedAdminPassword,
+            },
+          });
+          this.logger.log(`✅ Senha do admin atualizada: ${adminEmail}`);
+        } else {
+          this.logger.log(`✅ Senha do admin já está correta: ${adminEmail}`);
+        }
       }
 
       // Verificar se usuário já existe
@@ -52,19 +70,86 @@ export class UsersService implements OnModuleInit {
           },
         });
         this.logger.log(`Usuário padrão criado: ${userEmail}`);
+      } else {
+        // Verificar se a senha atual funciona
+        const isPasswordValid = await bcrypt.compare(userPassword, existingUser.password);
+        if (!isPasswordValid) {
+          // Só atualiza se a senha não estiver correta
+          this.logger.warn(`⚠️ Senha do usuário não corresponde, atualizando...`);
+          const hashedUserPassword = await bcrypt.hash(userPassword, 10);
+          await this.prisma.user.update({
+            where: { email: userEmail },
+            data: {
+              password: hashedUserPassword,
+            },
+          });
+          this.logger.log(`✅ Senha do usuário atualizada: ${userEmail}`);
+        } else {
+          this.logger.log(`✅ Senha do usuário já está correta: ${userEmail}`);
+        }
       }
 
       this.logger.log('Configurações detectadas - ADMIN: ' + adminEmail + ', USER: ' + userEmail);
+
+      // Criar usuário adicional: admin@teste.com
+      const testAdminEmail = 'admin@teste.com';
+      const testAdminPassword = 'admin123';
+      
+      const existingTestAdmin = await this.prisma.user.findUnique({
+        where: { email: testAdminEmail },
+      });
+
+      if (!existingTestAdmin) {
+        const hashedTestAdminPassword = await bcrypt.hash(testAdminPassword, 10);
+        await this.prisma.user.create({
+          data: {
+            email: testAdminEmail,
+            password: hashedTestAdminPassword,
+            role: 'ADMIN',
+          },
+        });
+        this.logger.log(`✅ Usuário admin de teste criado: ${testAdminEmail}`);
+      } else {
+        // Verificar se a senha atual funciona
+        const isPasswordValid = await bcrypt.compare(testAdminPassword, existingTestAdmin.password);
+        if (!isPasswordValid) {
+          this.logger.warn(`⚠️ Senha do admin de teste não corresponde, atualizando...`);
+          const hashedTestAdminPassword = await bcrypt.hash(testAdminPassword, 10);
+          await this.prisma.user.update({
+            where: { email: testAdminEmail },
+            data: {
+              password: hashedTestAdminPassword,
+            },
+          });
+          this.logger.log(`✅ Senha do admin de teste atualizada: ${testAdminEmail}`);
+        } else {
+          this.logger.log(`✅ Senha do admin de teste já está correta: ${testAdminEmail}`);
+        }
+      }
     } catch (error) {
       this.logger.error('Erro durante inicialização do UsersService:', error);
     }
   }
 
   async findOneByEmail(email: string) {
-    return this.prisma.user.findUnique({
-      where: { email },
+    // Normalizar email para lowercase para busca case-insensitive
+    const normalizedEmail = email.toLowerCase().trim();
+    
+    // Tentar primeiro busca exata (mais rápida)
+    let user = await this.prisma.user.findUnique({
+      where: { email: normalizedEmail },
       include: { devices: { select: { meterId: true } } },
     });
+    
+    // Se não encontrou, buscar com case-insensitive usando findMany
+    if (!user) {
+      const users = await this.prisma.user.findMany({
+        include: { devices: { select: { meterId: true } } },
+      });
+      user = users.find(u => u.email.toLowerCase().trim() === normalizedEmail) || null;
+    }
+    
+    return user;
   }
 
   async findOneById(id: number) {
@@ -75,10 +160,12 @@ export class UsersService implements OnModuleInit {
   }
 
   async create(email: string, password: string, role: string = 'USER') {
+    // Normalizar email para lowercase
+    const normalizedEmail = email.toLowerCase().trim();
     const hashedPassword = await bcrypt.hash(password, 10);
     return this.prisma.user.create({
       data: {
-        email,
+        email: normalizedEmail,
         password: hashedPassword,
         role,
       },

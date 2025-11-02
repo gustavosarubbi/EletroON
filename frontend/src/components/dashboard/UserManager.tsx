@@ -14,9 +14,16 @@ import {
   Zap,
   Wifi,
   WifiOff,
-  MapPin
+  MapPin,
+  Loader2,
+  AlertCircle,
+  Search,
+  Filter,
+  Users as UsersIcon,
+  CheckCircle2
 } from 'lucide-react';
 import { dashboardService } from '../../services/dashboardService';
+import '../../styles/components/UserManager.css';
 
 interface UserData {
   id: number;
@@ -35,27 +42,46 @@ interface UserData {
       qt: number;
     };
   }>;
-  isEditing?: boolean;
+}
+
+interface NewUserForm {
+  email: string;
+  password: string;
+  role: string;
+}
+
+interface EditUserData {
+  email: string;
+  password: string;
 }
 
 const UserManager: React.FC = () => {
-
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [showMeterManagement, setShowMeterManagement] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [editingUserId, setEditingUserId] = useState<number | null>(null);
+  const [showPasswords, setShowPasswords] = useState<{ [key: number]: boolean }>({});
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterRole, setFilterRole] = useState<'all' | 'admin' | 'user'>('all');
   
-  // Carregar dados dos usuários
+  const [newUser, setNewUser] = useState<NewUserForm>({ 
+    email: '', 
+    password: '', 
+    role: 'user' 
+  });
+
+  const [editData, setEditData] = useState<{ [key: number]: EditUserData }>({});
+
+  // Carregar dados
   const loadUsersData = async () => {
     try {
       setLoading(true);
       setHasError(false);
-      console.log('Carregando dados dos usuários...');
-      
-      // Carregar dados reais da API
       const usersData = await dashboardService.getUsers();
-      console.log('✅ Dados reais de usuários carregados:', usersData);
       setUsers(usersData);
-      
     } catch (error) {
       console.error('❌ Erro ao carregar dados dos usuários:', error);
       setHasError(true);
@@ -65,44 +91,60 @@ const UserManager: React.FC = () => {
     }
   };
 
-  // Carregar dados iniciais
   useEffect(() => {
     loadUsersData();
   }, []);
-  
-  const [editingUser, setEditingUser] = useState<number | null>(null);
-  const [showPasswords, setShowPasswords] = useState<{ [key: number]: boolean }>({});
-  const [newUser, setNewUser] = useState({ email: '', password: '', role: 'user' });
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [showMeterManagement, setShowMeterManagement] = useState(false);
-  const [showUserMeters, setShowUserMeters] = useState<number | null>(null);
 
-  const handleEditUser = (userId: number) => {
-    setEditingUser(userId);
+  // Handlers
+  const togglePasswordVisibility = (userId: number) => {
+    setShowPasswords(prev => ({
+      ...prev,
+      [userId]: !prev[userId]
+    }));
   };
 
-  const handleSaveUser = (userId: number, newEmail: string, newPassword: string) => {
-    setUsers(users.map(user => 
-      user.id === userId 
-        ? { ...user, email: newEmail, password: newPassword || user.password }
-        : user
-    ));
-    setEditingUser(null);
+  const handleEditUser = (userId: number) => {
+    const user = users.find(u => u.id === userId);
+    if (user) {
+      setEditData({
+        ...editData,
+        [userId]: { email: user.email, password: '' }
+      });
+      setEditingUserId(userId);
+    }
+  };
+
+  const handleSaveUser = (userId: number) => {
+    const form = editData[userId];
+    if (form && form.email) {
+      setUsers(users.map(user => 
+        user.id === userId 
+          ? { ...user, email: form.email, password: form.password || user.password }
+          : user
+      ));
+      const newEditData = { ...editData };
+      delete newEditData[userId];
+      setEditData(newEditData);
+      setEditingUserId(null);
+    }
   };
 
   const handleCancelEdit = () => {
-    setEditingUser(null);
+    setEditingUserId(null);
   };
 
   const handleDeleteUser = (userId: number) => {
-    if (confirm('Tem certeza que deseja excluir este usuário?')) {
+    if (window.confirm('Tem certeza que deseja excluir este usuário? Esta ação não pode ser desfeita.')) {
       setUsers(users.filter(user => user.id !== userId));
+      if (editingUserId === userId) {
+        setEditingUserId(null);
+      }
     }
   };
 
   const handleAddUser = () => {
     if (newUser.email && newUser.password) {
-      const newId = Math.max(...users.map(u => u.id)) + 1;
+      const newId = users.length > 0 ? Math.max(...users.map(u => u.id)) + 1 : 1;
       const currentTime = new Date().toISOString().split('T')[0];
       
       setUsers([...users, { 
@@ -118,20 +160,7 @@ const UserManager: React.FC = () => {
     }
   };
 
-  const togglePasswordVisibility = (userId: number) => {
-    setShowPasswords(prev => ({
-      ...prev,
-      [userId]: !prev[userId]
-    }));
-  };
-
-  const handleShowUserMeters = (userId: number) => {
-    setShowUserMeters(showUserMeters === userId ? null : userId);
-  };
-
-
   const handleAssociateMeter = (userId: number, meterId: number) => {
-    // Simular associação de medidor
     const newMeter = {
       meterId,
       name: `Medidor ${meterId}`,
@@ -159,361 +188,462 @@ const UserManager: React.FC = () => {
     ));
   };
 
+  // Filtrar usuários
+  const filteredUsers = users.filter(user => {
+    const matchesSearch = user.email.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFilter = filterRole === 'all' || user.role === filterRole;
+    return matchesSearch && matchesFilter;
+  });
+
+  // Loading State
   if (loading) {
     return (
-      <div className="user-manager">
-        <div className="user-manager-header">
-          <h2>Gerenciamento de Usuários</h2>
-        </div>
-        <div className="loading-message">
-          <div className="loading-spinner"></div>
-          <p>Carregando dados dos usuários...</p>
+      <div className="user-manager-container">
+        <div className="user-manager-loading">
+          <Loader2 className="spinner-icon" size={56} />
+          <p>Carregando usuários...</p>
         </div>
       </div>
     );
   }
 
+  // Error State
   if (hasError) {
     return (
-      <div className="user-manager">
-        <div className="user-manager-header">
-          <h2>Gerenciamento de Usuários</h2>
-        </div>
-        <div className="error-message">
-          <div className="error-content">
-            <h3>❌ Erro ao carregar usuários</h3>
-            <p>Não foi possível conectar com a API.</p>
-            <p>Verifique se a API está rodando em <code>http://localhost:3000</code></p>
-            <button 
-              className="retry-btn"
-              onClick={loadUsersData}
-            >
-              🔄 Tentar Novamente
-            </button>
-          </div>
+      <div className="user-manager-container">
+        <div className="user-manager-error">
+          <AlertCircle className="error-icon" size={64} />
+          <h3>Erro ao carregar usuários</h3>
+          <p>Não foi possível conectar com a API.</p>
+          <p className="error-detail">Verifique se a API está rodando em <code>http://localhost:3000</code></p>
+          <button className="retry-btn" onClick={loadUsersData}>
+            <Loader2 size={18} />
+            Tentar Novamente
+          </button>
         </div>
       </div>
     );
   }
 
+  const regularUsers = users.filter(user => user.role !== 'admin');
+  const selectedUser = users.find(u => u.id === selectedUserId);
+
   return (
-    <div className="user-manager">
+    <div className="user-manager-container">
+      {/* Header com Estatísticas */}
       <div className="user-manager-header">
-        <h2>Gerenciamento de Usuários</h2>
+        <div className="header-stats">
+          <div className="stat-card">
+            <div className="stat-icon users">
+              <UsersIcon size={24} />
+            </div>
+            <div className="stat-content">
+              <div className="stat-value">{users.length}</div>
+              <div className="stat-label">Total de Usuários</div>
+            </div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-icon admins">
+              <User size={24} />
+            </div>
+            <div className="stat-content">
+              <div className="stat-value">{users.filter(u => u.role === 'admin').length}</div>
+              <div className="stat-label">Administradores</div>
+            </div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-icon regular">
+              <UsersIcon size={24} />
+            </div>
+            <div className="stat-content">
+              <div className="stat-value">{regularUsers.length}</div>
+              <div className="stat-label">Usuários Regulares</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Barra de Busca e Filtros */}
+        <div className="header-controls">
+          <div className="search-container">
+            <Search className="search-icon" size={20} />
+            <input
+              type="text"
+              className="search-input"
+              placeholder="Buscar por email..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <div className="filter-container">
+            <Filter className="filter-icon" size={18} />
+            <select 
+              className="filter-select"
+              value={filterRole}
+              onChange={(e) => setFilterRole(e.target.value as 'all' | 'admin' | 'user')}
+            >
+              <option value="all">Todos</option>
+              <option value="admin">Administradores</option>
+              <option value="user">Usuários</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Botões de Ação */}
         <div className="header-actions">
           <button 
-            className="manage-meters-btn"
+            className="action-btn manage-meters"
             onClick={() => setShowMeterManagement(!showMeterManagement)}
           >
-            <Zap size={16} />
-            Gerenciar Medidores
+            <Zap size={18} />
+            <span>Gerenciar Medidores</span>
           </button>
           <button 
-            className="add-user-btn"
-            onClick={() => setShowAddForm(!showAddForm)}
+            className="action-btn add-user"
+            onClick={() => {
+              setShowAddForm(!showAddForm);
+              setShowMeterManagement(false);
+            }}
           >
-            <Plus size={16} />
-            Adicionar Usuário
+            <Plus size={18} />
+            <span>Adicionar Usuário</span>
           </button>
         </div>
       </div>
 
-      {/* Formulário para adicionar usuário */}
-      {showAddForm ? (
-        <div className="add-user-form">
-          <h3>Adicionar Novo Usuário</h3>
-          <div className="form-group">
-            <label>
-              <Mail size={16} />
-              Email
-            </label>
-            <input
-              type="email"
-              value={newUser.email}
-              onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-              placeholder="Digite o email do usuário"
-            />
-          </div>
-          <div className="form-group">
-            <label>
-              <Lock size={16} />
-              Senha
-            </label>
-            <input
-              type="password"
-              value={newUser.password}
-              onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-              placeholder="Digite a senha"
-            />
-          </div>
-          <div className="form-actions">
-            <button className="save-btn" onClick={handleAddUser}>
-              <Save size={16} />
-              Salvar
-            </button>
-            <button className="cancel-btn" onClick={() => setShowAddForm(false)}>
-              <X size={16} />
-              Cancelar
+      {/* Formulário Adicionar Usuário */}
+      {showAddForm && (
+        <div className="add-user-card">
+          <div className="card-header">
+            <h3>Novo Usuário</h3>
+            <button className="close-btn" onClick={() => setShowAddForm(false)}>
+              <X size={20} />
             </button>
           </div>
-        </div>
-      ) : (
-        <>
-
-      {/* Seção de Gerenciamento de Medidores */}
-      {showMeterManagement && (
-        <div className="meter-management-section">
-          <h3>Gerenciamento de Medidores</h3>
-          {users.filter(user => user.role !== 'admin').length > 0 ? (
-            <div className="meter-management-grid">
-              {users.filter(user => user.role !== 'admin').map(user => (
-              <div key={user.id} className="user-meter-card">
-                <div className="user-info-header">
-                  <div className="user-avatar-small">
-                    <User size={16} />
-                  </div>
-                  <div className="user-info">
-                    <div className="user-email">{user.email}</div>
-                    <div className="user-role-badge">
-                      Usuário
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="meters-section">
-                  <h4>Medidores Associados ({user.devices.length})</h4>
-                  <div className="meters-table">
-                    {user.devices.map(device => (
-                      <div key={device.meterId} className="meter-row">
-                        <div className="meter-info">
-                          <div className="meter-name">
-                            <Zap size={14} />
-                            <span>{device.name}</span>
-                          </div>
-                          <div className="meter-location">
-                            <MapPin size={12} />
-                            <span>{device.location}</span>
-                          </div>
-                          <div className={`meter-status ${device.status.toLowerCase()}`}>
-                            {device.status === 'ONLINE' ? <Wifi size={12} /> : <WifiOff size={12} />}
-                            <span>{device.status === 'ONLINE' ? 'Online' : 'Offline'}</span>
-                          </div>
-                        </div>
-                        <div className="meter-reading">
-                          {device.lastReading && (
-                            <div className="reading-info">
-                              <div className="reading-time">
-                                {new Date(device.lastReading.timestamp).toLocaleString('pt-BR')}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                        <div className="meter-actions">
-                          <button
-                            className="disassociate-btn"
-                            onClick={() => handleDisassociateMeter(user.id, device.meterId)}
-                            title="Desassociar medidor"
-                          >
-                            <X size={14} />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  <div className="available-meters">
-                    <h5>Medidores Disponíveis</h5>
-                    <div className="available-meters-list">
-                      {[401, 402, 403, 404, 405].map(meterId => (
-                        <div key={meterId} className="available-meter">
-                          <div className="meter-id">Medidor {meterId}</div>
-                          <button
-                            className="associate-btn"
-                            onClick={() => handleAssociateMeter(user.id, meterId)}
-                          >
-                            <Plus size={12} />
-                            Associar
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+          <div className="card-body">
+            <div className="form-row">
+              <div className="form-group">
+                <label>
+                  <Mail size={16} />
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={newUser.email}
+                  onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                  placeholder="usuario@exemplo.com"
+                />
               </div>
-              ))}
+              <div className="form-group">
+                <label>
+                  <Lock size={16} />
+                  Senha
+                </label>
+                <input
+                  type="password"
+                  value={newUser.password}
+                  onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                  placeholder="Digite a senha"
+                />
+              </div>
             </div>
-          ) : (
-            <div className="no-users-message">
-              <User size={48} />
-              <h4>Nenhum usuário regular encontrado</h4>
-              <p>Adicione usuários regulares para gerenciar seus medidores</p>
+            <div className="form-group">
+              <label>
+                <User size={16} />
+                Tipo de Usuário
+              </label>
+              <select
+                value={newUser.role}
+                onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
+              >
+                <option value="user">Usuário Regular</option>
+                <option value="admin">Administrador</option>
+              </select>
             </div>
-          )}
+            <div className="form-actions">
+              <button className="btn-primary" onClick={handleAddUser}>
+                <CheckCircle2 size={18} />
+                <span>Salvar Usuário</span>
+              </button>
+              <button className="btn-secondary" onClick={() => setShowAddForm(false)}>
+                <X size={18} />
+                <span>Cancelar</span>
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Lista de usuários */}
-      <div className="users-list">
-        {users.map(user => (
-          <div key={user.id} className="user-card">
-            <div className="user-header">
-              <div className="user-avatar">
-                <User size={20} />
+      {/* Seção de Gerenciamento de Medidores */}
+      {showMeterManagement && !showAddForm && (
+        <div className="meter-management-card">
+          <div className="card-header">
+            <h3>Gerenciamento de Medidores</h3>
+            <button className="close-btn" onClick={() => setShowMeterManagement(false)}>
+              <X size={20} />
+            </button>
+          </div>
+          <div className="card-body">
+            {regularUsers.length > 0 ? (
+              <div className="meter-users-grid">
+                {regularUsers.map(user => (
+                  <div key={user.id} className="meter-user-card">
+                    <div className="user-card-header">
+                      <div className="user-avatar">
+                        <User size={20} />
+                      </div>
+                      <div className="user-info">
+                        <div className="user-email">{user.email}</div>
+                        <div className="user-badge">Usuário Regular</div>
+                      </div>
+                    </div>
+                    
+                    <div className="meters-section">
+                      <div className="section-title">
+                        <Zap size={16} />
+                        <span>Medidores Associados ({user.devices.length})</span>
+                      </div>
+                      <div className="meters-list">
+                        {user.devices.length > 0 ? (
+                          user.devices.map(device => (
+                            <div key={device.meterId} className="meter-item">
+                              <div className="meter-info">
+                                <div className="meter-name">{device.name}</div>
+                                <div className="meter-location">
+                                  <MapPin size={12} />
+                                  {device.location}
+                                </div>
+                                <div className={`meter-status-badge ${device.status.toLowerCase()}`}>
+                                  {device.status === 'ONLINE' ? <Wifi size={12} /> : <WifiOff size={12} />}
+                                  {device.status}
+                                </div>
+                              </div>
+                              <button
+                                className="remove-meter-btn"
+                                onClick={() => handleDisassociateMeter(user.id, device.meterId)}
+                                title="Remover medidor"
+                              >
+                                <X size={14} />
+                              </button>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="empty-meters">Nenhum medidor associado</div>
+                        )}
+                      </div>
+                      
+                      <div className="available-meters-section">
+                        <div className="section-title">
+                          <Plus size={16} />
+                          <span>Medidores Disponíveis</span>
+                        </div>
+                        <div className="available-meters-grid">
+                          {[401, 402, 403, 404, 405].filter(id => 
+                            !user.devices.some(d => d.meterId === id)
+                          ).map(meterId => (
+                            <button
+                              key={meterId}
+                              className="available-meter-btn"
+                              onClick={() => handleAssociateMeter(user.id, meterId)}
+                            >
+                              <Zap size={14} />
+                              <span>Medidor {meterId}</span>
+                              <Plus size={14} />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div className="user-basic-info">
-                {editingUser === user.id ? (
-                  <div className="edit-form">
-                    <div className="form-group">
+            ) : (
+              <div className="empty-state">
+                <UsersIcon size={64} />
+                <h4>Nenhum usuário regular encontrado</h4>
+                <p>Adicione usuários regulares para gerenciar seus medidores</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Lista de Usuários */}
+      {!showAddForm && !showMeterManagement && (
+        <div className="users-grid">
+          {filteredUsers.length > 0 ? (
+            filteredUsers.map(user => (
+              <div key={user.id} className="user-card-modern">
+                <div className="user-card-header-modern">
+                  <div className="user-avatar-modern">
+                    <User size={24} />
+                  </div>
+                  <div className="user-info-modern">
+                    <div className="user-email-modern">
+                      <Mail size={16} />
+                      <span>{user.email}</span>
+                    </div>
+                    <div className={`role-badge-modern ${user.role}`}>
+                      {user.role === 'admin' ? 'Administrador' : 'Usuário'}
+                    </div>
+                  </div>
+                </div>
+
+                {editingUserId === user.id ? (
+                  <div className="edit-form-modern">
+                    <div className="form-group-modern">
                       <label>
                         <Mail size={14} />
                         Email
                       </label>
                       <input
                         type="email"
-                        defaultValue={user.email}
-                        id={`email-${user.id}`}
+                        value={editData[user.id]?.email || user.email}
+                        onChange={(e) => setEditData({
+                          ...editData,
+                          [user.id]: { ...(editData[user.id] || { email: user.email, password: '' }), email: e.target.value }
+                        })}
                       />
                     </div>
-                    <div className="form-group">
+                    <div className="form-group-modern">
                       <label>
                         <Lock size={14} />
-                        Nova Senha
+                        Nova Senha (opcional)
                       </label>
                       <input
                         type="password"
-                        placeholder="Digite a nova senha"
-                        id={`password-${user.id}`}
+                        placeholder="Deixe em branco para manter a atual"
+                        value={editData[user.id]?.password || ''}
+                        onChange={(e) => setEditData({
+                          ...editData,
+                          [user.id]: { ...(editData[user.id] || { email: user.email, password: '' }), password: e.target.value }
+                        })}
                       />
+                    </div>
+                    <div className="edit-actions-modern">
+                      <button className="btn-save" onClick={() => handleSaveUser(user.id)}>
+                        <Save size={16} />
+                        <span>Salvar</span>
+                      </button>
+                      <button className="btn-cancel" onClick={handleCancelEdit}>
+                        <X size={16} />
+                        <span>Cancelar</span>
+                      </button>
                     </div>
                   </div>
                 ) : (
                   <>
-                    <div className="user-email">
-                      <Mail size={16} />
-                      <span>{user.email}</span>
+                    <div className="user-details-modern">
+                      <div className="detail-item">
+                        <Lock size={14} />
+                        <span className="detail-label">Senha:</span>
+                        <span className="detail-value">
+                          {showPasswords[user.id] ? (user.password || 'N/A') : '********'}
+                        </span>
+                        <button
+                          className="toggle-password-modern"
+                          onClick={() => togglePasswordVisibility(user.id)}
+                        >
+                          {showPasswords[user.id] ? <EyeOff size={14} /> : <Eye size={14} />}
+                        </button>
+                      </div>
+                      <div className="detail-item">
+                        <Zap size={14} />
+                        <span className="detail-label">Medidores:</span>
+                        <span className="detail-value">{user.devices.length}</span>
+                      </div>
+                      <div className="detail-item">
+                        <Clock size={14} />
+                        <span className="detail-label">Criado em:</span>
+                        <span className="detail-value">
+                          {new Date(user.createdAt).toLocaleDateString('pt-BR')}
+                        </span>
+                      </div>
                     </div>
-                    <div className="user-password">
-                      <Lock size={16} />
-                      <span>{showPasswords[user.id] ? (user.password || 'N/A') : '********'}</span>
+
+                    <div className="user-actions-modern">
                       <button
-                        className="toggle-password"
-                        onClick={() => togglePasswordVisibility(user.id)}
+                        className="action-btn-modern edit"
+                        onClick={() => handleEditUser(user.id)}
                       >
-                        {showPasswords[user.id] ? <EyeOff size={14} /> : <Eye size={14} />}
+                        <Edit3 size={16} />
+                        <span>Editar</span>
                       </button>
-                    </div>
-                    <div className="user-role">
-                      <User size={16} />
-                      <span className={`role-badge ${user.role}`}>
-                        {user.role === 'admin' ? 'Administrador' : 'Usuário'}
-                      </span>
+                      <button
+                        className="action-btn-modern delete"
+                        onClick={() => handleDeleteUser(user.id)}
+                      >
+                        <Trash2 size={16} />
+                        <span>Excluir</span>
+                      </button>
+                      {user.devices.length > 0 && (
+                        <button
+                          className="action-btn-modern view-meters"
+                          onClick={() => setSelectedUserId(selectedUserId === user.id ? null : user.id)}
+                        >
+                          <Zap size={16} />
+                          <span>Medidores ({user.devices.length})</span>
+                        </button>
+                      )}
                     </div>
                   </>
                 )}
               </div>
-              <div className="user-actions">
-                {editingUser === user.id ? (
-                  <div className="edit-actions">
-                    <button
-                      className="save-btn"
-                      onClick={() => {
-                        const emailInput = document.getElementById(`email-${user.id}`) as HTMLInputElement;
-                        const passwordInput = document.getElementById(`password-${user.id}`) as HTMLInputElement;
-                        handleSaveUser(user.id, emailInput.value, passwordInput.value);
-                      }}
-                    >
-                      <Save size={16} />
-                    </button>
-                    <button
-                      className="cancel-btn"
-                      onClick={handleCancelEdit}
-                    >
-                      <X size={16} />
-                    </button>
-                  </div>
-                ) : (
-                  <div className="default-actions">
-                    <button
-                      className="edit-btn"
-                      onClick={() => handleEditUser(user.id)}
-                      title="Editar usuário"
-                    >
-                      <Edit3 size={16} />
-                    </button>
-                    <button
-                      className="delete-btn"
-                      onClick={() => handleDeleteUser(user.id)}
-                      title="Excluir usuário"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                )}
-              </div>
+            ))
+          ) : (
+            <div className="empty-state">
+              <Search size={64} />
+              <h4>Nenhum usuário encontrado</h4>
+              <p>Tente ajustar os filtros de busca</p>
             </div>
-
-            {/* Medidores Associados */}
-            <div className="user-devices">
-              <button 
-                className="view-meters-btn"
-                onClick={() => handleShowUserMeters(user.id)}
-              >
-                <Zap size={16} />
-                Ver Medidores ({user.devices.length})
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-        </>
+          )}
+        </div>
       )}
 
-      {/* Modal de Medidores do Usuário */}
-      {showUserMeters && (
-        <div className="user-meters-modal">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h3>Medidores de {users.find(u => u.id === showUserMeters)?.email}</h3>
-              <button 
-                className="close-modal-btn"
-                onClick={() => setShowUserMeters(null)}
-              >
-                <X size={20} />
+      {/* Modal de Medidores */}
+      {selectedUserId && selectedUser && (
+        <div className="modal-overlay" onClick={() => setSelectedUserId(null)}>
+          <div className="modal-content-modern" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header-modern">
+              <h3>Medidores de {selectedUser.email}</h3>
+              <button className="modal-close-btn" onClick={() => setSelectedUserId(null)}>
+                <X size={24} />
               </button>
             </div>
-            <div className="modal-body">
-              {users.find(u => u.id === showUserMeters)?.devices && users.find(u => u.id === showUserMeters)!.devices.length > 0 ? (
-                <div className="meters-list">
-                  {users.find(u => u.id === showUserMeters)?.devices.map(device => (
-                    <div key={device.meterId} className="meter-item">
-                      <div className="meter-info">
-                        <div className="meter-name">
-                          <Zap size={16} />
-                          <span>{device.name}</span>
+            <div className="modal-body-modern">
+              {selectedUser.devices.length > 0 ? (
+                <div className="meters-list-modern">
+                  {selectedUser.devices.map(device => (
+                    <div key={device.meterId} className="meter-card-modern">
+                      <div className="meter-header-modern">
+                        <div className="meter-icon">
+                          <Zap size={20} />
                         </div>
-                        <div className="meter-location">
+                        <div className="meter-title-modern">
+                          <div className="meter-name-modern">{device.name}</div>
+                          <div className={`meter-status-modern ${device.status.toLowerCase()}`}>
+                            {device.status === 'ONLINE' ? <Wifi size={14} /> : <WifiOff size={14} />}
+                            {device.status}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="meter-details-modern">
+                        <div className="meter-detail-item">
                           <MapPin size={14} />
                           <span>{device.location || 'Localização não definida'}</span>
                         </div>
-                        <div className={`meter-status ${device.status.toLowerCase()}`}>
-                          {device.status === 'ONLINE' ? <Wifi size={14} /> : <WifiOff size={14} />}
-                          <span>{device.status === 'ONLINE' ? 'Online' : 'Offline'}</span>
-                        </div>
-                      </div>
-                      {device.lastReading && (
-                        <div className="meter-reading">
-                          <div className="reading-time">
+                        {device.lastReading && (
+                          <div className="meter-detail-item">
                             <Clock size={14} />
                             <span>Última leitura: {new Date(device.lastReading.timestamp).toLocaleString('pt-BR')}</span>
                           </div>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="no-meters">
-                  <Zap size={48} />
+                <div className="empty-state">
+                  <Zap size={64} />
                   <h4>Nenhum medidor associado</h4>
                   <p>Este usuário ainda não possui medidores associados.</p>
                 </div>

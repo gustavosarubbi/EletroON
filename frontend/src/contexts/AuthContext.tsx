@@ -79,15 +79,6 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
 // Criar o contexto
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Hook personalizado para usar o contexto
-export function useAuth(): AuthContextType {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
-  }
-  return context;
-}
-
 // Provider do contexto
 interface AuthProviderProps {
   children: ReactNode;
@@ -182,4 +173,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+// Hook personalizado para usar o contexto
+// Exportado após o AuthProvider para compatibilidade com Fast Refresh
+export function useAuth(): AuthContextType {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
+  }
+  return context;
 }

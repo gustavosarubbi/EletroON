@@ -1,0 +1,23 @@
+{
+  "name": "eletroon-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "pnpm@10.15.1",
+  "scripts": {
+    "install:all": "pnpm install",
+    "dev:backend": "pnpm --filter api-eletroon start:dev",
+    "dev:frontend": "pnpm --filter front-eletroon dev",
+    "build:backend": "pnpm --filter api-eletroon build",
+    "build:frontend": "pnpm --filter front-eletroon build",
+    "start:backend": "pnpm --filter api-eletroon start",
+    "start:frontend": "pnpm --filter front-eletroon preview",
+    "prisma:generate": "pnpm --filter api-eletroon prisma:generate",
+    "prisma:migrate": "pnpm --filter api-eletroon prisma:migrate",
+    "prisma:studio": "pnpm --filter api-eletroon prisma:studio"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  }
+}
+

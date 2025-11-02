@@ -1,24 +1,30 @@
-/* ===== BACKGROUND E FORMAS GEOMÉTRICAS ===== */
-/* ⚠️ IMPORTANTE: Este projeto usa pnpm para gerenciamento de pacotes */
+/* ===== BACKGROUND E CONTAINER PRINCIPAL ===== */
+/* Design Moderno e Escuro - Refatorado Completo */
 
-/* Container principal do background - Design Moderno */
-.login-container {
+.login-page-container {
   min-height: 100vh;
   width: 100vw;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 25%, #16213e 50%, #0f3460 75%, #533483 100%);
-  padding: 16px;
+  padding: 24px;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   position: relative;
   overflow: hidden;
   margin: 0;
   box-sizing: border-box;
+  
+  /* Background escuro com gradientes profundos */
+  background: 
+    radial-gradient(ellipse at top left, rgba(15, 23, 42, 0.8) 0%, transparent 50%),
+    radial-gradient(ellipse at top right, rgba(30, 41, 59, 0.6) 0%, transparent 50%),
+    radial-gradient(ellipse at bottom left, rgba(15, 23, 42, 0.4) 0%, transparent 50%),
+    radial-gradient(ellipse at bottom right, rgba(30, 41, 59, 0.5) 0%, transparent 50%),
+    linear-gradient(135deg, #0a0a0a 0%, #0f172a 25%, #1e293b 50%, #0f172a 75%, #0a0a0a 100%);
 }
 
-/* Background moderno com gradientes e grid */
-.login-container::before {
+/* Camadas de profundidade visual */
+.login-page-container::before {
   content: '';
   position: fixed;
   top: 0;
@@ -26,31 +32,43 @@
   width: 100vw;
   height: 100vh;
   background: 
-    radial-gradient(circle at 20% 20%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 40% 60%, rgba(16, 185, 129, 0.05) 0%, transparent 50%);
-  animation: backgroundFloat 20s ease-in-out infinite;
+    radial-gradient(circle at 15% 25%, rgba(59, 130, 246, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 85% 75%, rgba(139, 92, 246, 0.06) 0%, transparent 40%),
+    radial-gradient(circle at 50% 50%, rgba(14, 165, 233, 0.04) 0%, transparent 50%);
+  animation: backgroundPulse 25s ease-in-out infinite;
   z-index: 0;
   pointer-events: none;
 }
 
-.login-container::after {
+.login-page-container::after {
   content: '';
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
+  top: -10%;
+  left: -10%;
+  width: 120vw;
+  height: 120vh;
   background-image: 
-    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(0deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-  background-size: 50px 50px;
-  animation: gridMove 30s linear infinite;
+    /* Grid principal mais visível */
+    linear-gradient(90deg, rgba(59, 130, 246, 0.08) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(59, 130, 246, 0.08) 1px, transparent 1px),
+    /* Grid secundário mais sutil */
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 
+    80px 80px,  /* Grid principal */
+    80px 80px,
+    20px 20px,  /* Grid secundário fino */
+    20px 20px;
+  background-position: 0 0, 0 0, 0 0, 0 0;
+  background-repeat: repeat;
+  animation: gridDrift 50s linear infinite;
   z-index: 0;
   pointer-events: none;
+  opacity: 1;
+  transform-origin: center center;
 }
 
-/* Container das partículas modernas */
+/* Container das partículas */
 .particles-container {
   position: fixed;
   top: 0;
@@ -62,127 +80,59 @@
   overflow: hidden;
 }
 
-/* Partículas modernas */
+/* Partículas estilizadas */
 .particle {
   position: absolute;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%);
-  box-shadow: 0 0 6px rgba(255, 255, 255, 0.3);
-  animation: particleFloat 15s linear infinite;
+  opacity: 0.6;
 }
 
-/* Variações de tamanho das partículas */
-.particle:nth-child(odd) {
-  width: 2px;
-  height: 2px;
-  background: radial-gradient(circle, rgba(59, 130, 246, 0.8) 0%, rgba(59, 130, 246, 0.4) 50%, transparent 100%);
-  box-shadow: 0 0 4px rgba(59, 130, 246, 0.3);
-}
-
-.particle:nth-child(even) {
-  width: 3px;
-  height: 3px;
-  background: radial-gradient(circle, rgba(139, 92, 246, 0.8) 0%, rgba(139, 92, 246, 0.4) 50%, transparent 100%);
-  box-shadow: 0 0 5px rgba(139, 92, 246, 0.3);
-}
-
-.particle:nth-child(3n) {
-  width: 1px;
-  height: 1px;
-  background: radial-gradient(circle, rgba(16, 185, 129, 0.8) 0%, rgba(16, 185, 129, 0.4) 50%, transparent 100%);
-  box-shadow: 0 0 3px rgba(16, 185, 129, 0.3);
-}
-
-.particle:nth-child(4n) {
-  width: 4px;
-  height: 4px;
-  background: radial-gradient(circle, rgba(245, 158, 11, 0.8) 0%, rgba(245, 158, 11, 0.4) 50%, transparent 100%);
-  box-shadow: 0 0 6px rgba(245, 158, 11, 0.3);
-}
-
-/* ===== POSICIONAMENTO DAS PARTÍCULAS ===== */
-/* Posicionamento das partículas é controlado dinamicamente via JavaScript */
-
-/* ===== ANIMAÇÕES ===== */
-
-/* Animações modernas do dashboard */
-@keyframes backgroundFloat {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  33% { transform: translateY(-20px) rotate(1deg); }
-  66% { transform: translateY(10px) rotate(-1deg); }
-}
-
-@keyframes gridMove {
-  0% { transform: translate(0, 0); }
-  100% { transform: translate(50px, 50px); }
-}
-
-/* Animação das partículas */
-@keyframes particleFloat {
-  0% {
-    transform: translateY(0px) translateX(0px) rotate(0deg);
+/* Animações do background */
+@keyframes backgroundPulse {
+  0%, 100% { 
+    transform: translateY(0px) scale(1); 
     opacity: 1;
   }
-  50% {
-    transform: translateY(-50vh) translateX(50px) rotate(180deg);
-    opacity: 1;
+  33% { 
+    transform: translateY(-30px) scale(1.05); 
+    opacity: 0.9;
   }
-  100% {
-    transform: translateY(-100vh) translateX(100px) rotate(360deg);
-    opacity: 0;
+  66% { 
+    transform: translateY(20px) scale(0.95); 
+    opacity: 0.95;
   }
 }
 
-/* Variações de velocidade das partículas */
-.particle:nth-child(odd) {
-  animation-duration: 20s;
-  animation-delay: 0s;
+@keyframes gridDrift {
+  0% { 
+    transform: translate(0, 0); 
+  }
+  100% { 
+    transform: translate(80px, 80px); 
+  }
 }
 
-.particle:nth-child(even) {
-  animation-duration: 25s;
-  animation-delay: 5s;
-}
-
-.particle:nth-child(3n) {
-  animation-duration: 15s;
-  animation-delay: 10s;
-}
-
-.particle:nth-child(4n) {
-  animation-duration: 30s;
-  animation-delay: 15s;
-}
-
-.particle:nth-child(5n) {
-  animation-duration: 18s;
-  animation-delay: 20s;
-}
-
-/* Efeitos especiais das partículas */
-.particle:hover {
-  transform: scale(1.5);
-  filter: brightness(1.5);
-  z-index: 1;
-}
-
-/* Responsividade do background */
+/* Responsividade */
 @media (max-width: 768px) {
-  .login-container {
-    background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+  .login-page-container {
+    padding: 16px;
+    background: 
+      radial-gradient(ellipse at top, rgba(15, 23, 42, 0.7) 0%, transparent 50%),
+      linear-gradient(180deg, #0a0a0a 0%, #0f172a 50%, #1e293b 100%);
   }
 }
 
 @media (max-width: 480px) {
-  .login-container {
-    background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+  .login-page-container {
+    padding: 12px;
+    background: linear-gradient(180deg, #0a0a0a 0%, #0f172a 100%);
   }
 }
 
-/* Acessibilidade */
+/* Redução de movimento para acessibilidade */
 @media (prefers-reduced-motion: reduce) {
-  .login-container::before,
-  .login-container::after,
+  .login-page-container::before,
+  .login-page-container::after,
   .particle {
     animation: none;
   }

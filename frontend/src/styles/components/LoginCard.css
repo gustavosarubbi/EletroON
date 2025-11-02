@@ -1,256 +1,211 @@
-/* ===== LOGIN CARD ===== */
+/* ===== LOGIN CARD - Design Moderno e Escuro ===== */
+/* Refatorado Completamente */
 
-.login-card {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(25px);
-  border-radius: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 
-    0 20px 40px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  padding: 6px 16px 12px 16px;
+.login-page-card {
   width: 100%;
-  max-width: 380px;
+  max-width: 440px;
   position: relative;
   z-index: 10;
-  overflow: hidden;
-  animation: cardEntrance 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   
-  /* Micro-interações melhoradas */
-  transform: translateY(0) scale(1);
-  will-change: transform, box-shadow;
-}
-
-.login-card:hover {
-  transform: translateY(-8px) scale(1.02);
+  /* Card escuro com vidro fosco */
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-radius: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  
+  /* Sombras profundas e realistas */
   box-shadow: 
-    0 30px 60px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.2);
+    0 25px 50px -12px rgba(0, 0, 0, 0.8),
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  
+  padding: 32px 40px 28px 40px;
+  overflow: hidden;
+  
+  /* Animação de entrada suave */
+  animation: cardSlideIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Faixa moderna no topo com gradiente de azuis */
-.login-card::before {
+/* Efeito de brilho sutil no hover */
+.login-page-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(59, 130, 246, 0.1),
+    transparent
+  );
+  transition: left 0.6s ease;
+  pointer-events: none;
+}
+
+.login-page-card:hover::before {
+  left: 100%;
+}
+
+/* Linha superior com gradiente */
+.login-page-card::after {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, 
-    #0ea5e9 0%, 
-    #3b82f6 16.66%, 
-    #1d4ed8 33.33%, 
-    #1e40af 50%, 
-    #1e3a8a 66.66%, 
-    #1e40af 83.33%, 
-    #3b82f6 100%);
-  box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
-  border-radius: 24px 24px 0 0;
-  z-index: 2;
-  opacity: 0;
-  transition: opacity 0.3s ease;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(59, 130, 246, 0.6) 20%,
+    rgba(14, 165, 233, 0.8) 50%,
+    rgba(59, 130, 246, 0.6) 80%,
+    transparent 100%
+  );
+  border-radius: 32px 32px 0 0;
+  opacity: 0.8;
 }
 
-.login-card:hover::before {
-  opacity: 1;
-}
-
-/* Header do login */
-.login-header {
+/* Header do Login */
+.login-page-header {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
-  margin-bottom: 8px;
-  padding-top: 6px;
+  gap: 12px;
+  margin-bottom: 20px;
 }
 
-.logo-container {
+/* Container do Logo com efeito de brilho */
+.login-page-logo-wrapper {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
+  width: 72px;
+  height: 72px;
 }
 
-.logo {
+.login-page-logo-glow {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(59, 130, 246, 0.3) 0%,
+    rgba(14, 165, 233, 0.2) 40%,
+    transparent 70%
+  );
+  animation: logoGlow 3s ease-in-out infinite;
+  filter: blur(20px);
+}
+
+@keyframes logoGlow {
+  0%, 100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.1);
+  }
+}
+
+.login-page-logo {
+  position: relative;
   width: 64px;
   height: 64px;
   object-fit: contain;
-  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+  filter: drop-shadow(0 4px 12px rgba(59, 130, 246, 0.3));
+  z-index: 1;
 }
 
-/* Estilos do título movidos para Title.css para modularidade */
-
-/* Subtítulo de login (não usado mais) */
-.login-subtitle {
-  color: #718096;
-  font-size: 16px;
-  margin: 0 0 20px 0;
-  font-weight: 500;
-  text-align: center;
-}
-
-/* Subtítulo de login na parte inferior (não usado mais) */
-.login-subtitle-bottom {
-  color: #718096;
-  font-size: 16px;
-  margin: 0 0 16px 0;
-  font-weight: 500;
-  text-align: center;
-  padding: 0 20px;
-}
-
-/* Subtítulo de login abaixo dos ícones */
-.login-subtitle-below-icons {
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 14px;
-  margin: 6px 0 8px 0;
-  font-weight: 600;
-  text-align: center;
-  padding: 0 8px;
-}
-
-/* Divider debaixo do título EletroON */
-.login-header h1::after {
-  content: '';
-  display: block;
-  width: 60px;
-  height: 3px;
-  background: linear-gradient(90deg,
-    #0ea5e9 0%,
-    #3b82f6 25%,
-    #1d4ed8 50%,
-    #1e40af 75%,
-    #3b82f6 100%);
-  margin: 16px auto 0;
-  border-radius: 2px;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
-}
-
-/* Divider após o header */
-.header-divider {
-  width: 100%;
-  height: 1px;
-  background: linear-gradient(90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.1) 20%,
-    #0ea5e9 30%,
-    #3b82f6 50%,
-    #1d4ed8 70%,
-    rgba(255, 255, 255, 0.1) 80%,
-    transparent 100%);
-  margin: 16px 0 20px 0;
-  border-radius: 1px;
-}
-
-/* Divider antes do formulário */
-.form-divider {
-  width: 100%;
-  height: 2px;
-  background: linear-gradient(90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.1) 15%,
-    #0ea5e9 25%,
-    #3b82f6 35%,
-    #1d4ed8 50%,
-    #1e40af 65%,
-    #3b82f6 75%,
-    rgba(255, 255, 255, 0.1) 85%,
-    transparent 100%);
-  margin: 3px 0 6px 0;
-  border-radius: 2px;
-  box-shadow: 0 1px 3px rgba(59, 130, 246, 0.2);
-}
-
-.login-header p {
-  color: #718096;
-  font-size: 16px;
+/* Título Principal */
+.login-page-title {
+  font-size: 36px;
+  font-weight: 800;
+  line-height: 1;
   margin: 0;
-  font-weight: 500;
+  background: linear-gradient(
+    135deg,
+    #ffffff 0%,
+    #e2e8f0 50%,
+    #ffffff 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.02em;
 }
 
-/* Divider antes do footer */
-.login-divider {
-  width: 100%;
-  height: 2px;
-  background: linear-gradient(90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.1) 20%,
-    #0ea5e9 30%,
-    #3b82f6 50%,
-    #1d4ed8 70%,
-    rgba(255, 255, 255, 0.1) 80%,
-    transparent 100%);
-  margin: 12px 0 0 0;
-  border-radius: 1px;
+.login-page-title-main {
+  font-weight: 700;
 }
 
-/* Footer do login */
-.login-footer {
-  text-align: center;
-  margin-top: 6px;
-  padding-top: 6px;
+.login-page-title-accent {
+  font-weight: 800;
+  background: linear-gradient(
+    135deg,
+    #3b82f6 0%,
+    #0ea5e9 50%,
+    #60a5fa 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-.login-footer p {
+/* Subtítulo */
+.login-page-subtitle {
   color: rgba(255, 255, 255, 0.6);
   font-size: 14px;
-  margin: 0;
   font-weight: 500;
+  text-align: center;
+  letter-spacing: 0.02em;
+  margin: 0;
 }
 
-/* Responsividade */
-@media (max-width: 768px) {
-  .login-card {
-    margin: 20px;
-    padding: 20px 24px 32px 24px;
-    max-width: calc(100% - 40px);
-  }
-  
-  .login-header h1 {
-    font-size: 24px;
-  }
-  
-  .login-header p {
-    font-size: 15px;
-  }
-  
-  .logo {
-    width: 64px; /* REDUZIDO DE 96px PARA 64px */
-    height: 64px; /* REDUZIDO DE 96px PARA 64px */
-  }
+/* Divider */
+.login-page-divider {
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 20%,
+    rgba(59, 130, 246, 0.3) 50%,
+    rgba(255, 255, 255, 0.1) 80%,
+    transparent 100%
+  );
+  margin: 20px 0;
+  border-radius: 1px;
 }
 
-@media (max-width: 480px) {
-  .login-card {
-    margin: 16px;
-    padding: 16px 20px 28px 20px;
-    max-width: calc(100% - 32px);
-    border-radius: 16px;
-  }
-  
-  .login-header h1 {
-    font-size: 22px;
-  }
-  
-  .login-header p {
-    font-size: 14px;
-  }
-  
-  .logo {
-    width: 56px; /* REDUZIDO DE 84px PARA 56px */
-    height: 56px; /* REDUZIDO DE 84px PARA 56px */
-  }
+/* Footer */
+.login-page-footer {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  text-align: center;
 }
 
-/* ===== ANIMAÇÕES ===== */
-@keyframes cardEntrance {
+.login-page-footer p {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 12px;
+  font-weight: 500;
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+
+/* Animações */
+@keyframes cardSlideIn {
   0% {
     opacity: 0;
-    transform: translateY(30px) scale(0.95);
+    transform: translateY(40px) scale(0.96);
   }
   100% {
     opacity: 1;
@@ -258,138 +213,77 @@
   }
 }
 
-@keyframes iconFloat {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-2px);
-  }
-}
-
-.feature-icon {
-  animation: iconFloat 3s ease-in-out infinite;
-}
-
-.feature-icon:nth-child(2) {
-  animation-delay: 0.5s;
-}
-
-.feature-icon:nth-child(3) {
-  animation-delay: 1s;
-}
-
-/* ===== BLOCO DE FEATURES EM LINHA ===== */
-
-.features-inline {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: 6px 0;
-  padding: 6px 12px;
-  background: linear-gradient(135deg, 
-    rgba(14, 165, 233, 0.1) 0%, 
-    rgba(59, 130, 246, 0.05) 50%, 
-    rgba(29, 78, 216, 0.1) 100%);
-  border: 1px solid rgba(59, 130, 246, 0.2);
-  border-radius: 12px;
-  gap: 8px;
-  backdrop-filter: blur(10px);
-  box-shadow: 
-    0 2px 8px rgba(59, 130, 246, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-}
-
-.feature-inline-item {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.feature-icon {
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.feature-icon svg {
-  color: #0ea5e9;
-  stroke-width: 2;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.feature-icon:hover svg {
-  transform: scale(1.2) rotate(5deg);
-  filter: drop-shadow(0 4px 8px rgba(14, 165, 233, 0.3));
-}
-
-.feature-text {
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  text-transform: none;
-  white-space: nowrap;
-}
-
-.separator {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 14px;
-  font-weight: 300;
-  margin: 0 4px;
-}
-
-/* Hover effects removidos para manter estabilidade visual */
-
-/* Responsividade para features em linha */
+/* Responsividade */
 @media (max-width: 768px) {
-  .features-inline {
-    margin: 20px 0;
-    padding: 16px 0;
-    gap: 12px;
+  .login-page-card {
+    max-width: 100%;
+    padding: 28px 32px 24px 32px;
+    border-radius: 24px;
   }
   
-  .feature-icon {
-    width: 28px;
-    height: 28px;
+  .login-page-header {
+    gap: 10px;
+    margin-bottom: 18px;
   }
   
-  .feature-text {
+  .login-page-logo {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .login-page-title {
+    font-size: 32px;
+  }
+  
+  .login-page-subtitle {
     font-size: 13px;
   }
   
-  .separator {
-    font-size: 16px;
-    margin: 0 6px;
+  .login-page-divider {
+    margin: 18px 0;
+  }
+  
+  .login-page-footer {
+    margin-top: 18px;
+    padding-top: 14px;
   }
 }
 
 @media (max-width: 480px) {
-  .features-inline {
-    margin: 16px 0;
-    padding: 12px 0;
-    gap: 8px;
-    flex-wrap: wrap;
-    justify-content: center;
+  .login-page-card {
+    padding: 24px 20px 20px 20px;
+    border-radius: 20px;
   }
   
-  .feature-inline-item {
-    gap: 6px;
+  .login-page-header {
+    gap: 10px;
+    margin-bottom: 16px;
   }
   
-  .feature-icon {
-    width: 24px;
-    height: 24px;
+  .login-page-logo-wrapper {
+    width: 64px;
+    height: 64px;
   }
   
-  .feature-text {
+  .login-page-logo {
+    width: 56px;
+    height: 56px;
+  }
+  
+  .login-page-title {
+    font-size: 28px;
+  }
+  
+  .login-page-subtitle {
     font-size: 12px;
   }
   
-  .separator {
-    font-size: 14px;
-    margin: 0 4px;
+  .login-page-divider {
+    margin: 16px 0;
+  }
+  
+  .login-page-footer {
+    margin-top: 16px;
+    padding-top: 12px;
   }
 }

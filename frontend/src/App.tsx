@@ -3,6 +3,8 @@ import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
+import UserManagementPage from './pages/UserManagementPage';
+import RoomChartsPage from './pages/RoomChartsPage';
 import './styles/index.css';
 
 
@@ -21,6 +23,16 @@ function App() {
             <Route path="/admin/dashboard" element={
               <ProtectedRoute requireAdmin={true}>
                 <DashboardPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/usuarios" element={
+              <ProtectedRoute requireAdmin={true}>
+                <UserManagementPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/graficos-salas" element={
+              <ProtectedRoute requireAdmin={true}>
+                <RoomChartsPage />
               </ProtectedRoute>
             } />
             <Route path="/" element={<Navigate to="/login" replace />} />

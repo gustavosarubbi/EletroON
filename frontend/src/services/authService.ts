@@ -13,9 +13,33 @@ const api = axios.create({
   },
 });
 
+// Função auxiliar para verificar se o token é válido
+function isTokenValid(token: string): boolean {
+  if (!token) return false;
+  
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const currentTime = Math.floor(Date.now() / 1000);
+    return payload.exp && payload.exp > currentTime;
+  } catch (error) {
+    return false;
+  }
+}
+
 // Interceptor para adicionar token em todas as requisições
 api.interceptors.request.use(
   (config) => {
+    // Não adicionar token em rotas de autenticação pública
+    if (config.url?.includes('/auth/login')) {
+      // Limpar token antigo/inválido antes do login
+      const token = localStorage.getItem('token');
+      if (token && !isTokenValid(token)) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      }
+      return config;
+    }
+    
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -33,7 +57,8 @@ api.interceptors.response.use(
   (error) => {
     // Em caso de erro 401, apenas rejeitar a promise
     // O AuthContext irá lidar com a limpeza dos dados
-    if (error.response?.status === 401) {
+    // Não limpar dados se for a rota de login (401 é esperado em credenciais inválidas)
+    if (error.response?.status === 401 && !error.config?.url?.includes('/auth/login')) {
       console.log('🔒 Token inválido ou expirado, requisição rejeitada');
     }
     return Promise.reject(error);
@@ -63,11 +88,31 @@ export const authService = {
     try {
       console.log('🔐 Tentando fazer login...', { email: credentials.email });
       
-      const response = await api.post<{ access_token: string }>('/auth/login', credentials);
+      // Limpar token antigo/inválido antes de fazer login
+      const oldToken = localStorage.getItem('token');
+      if (oldToken && !this.isTokenValid()) {
+        console.log('🧹 Limpando token inválido antes do login');
+        this.clearAuthData();
+      }
+      
+      // Fazer requisição de login sem token no header
+      const response = await axios.post<{ access_token: string }>(
+        `${API_BASE_URL}/auth/login`,
+        credentials,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
       
       console.log('✅ Resposta da API:', response.data);
       
       const { access_token } = response.data;
+      
+      if (!access_token) {
+        throw new Error('Token não recebido do servidor');
+      }
       
       // Decodificar o token para extrair informações do usuário
       const payload = decodeJWT(access_token);
@@ -96,15 +141,45 @@ export const authService = {
     } catch (error: unknown) {
       console.error('❌ Erro no serviço de autenticação:', error);
       
+      // Tratamento específico de erros HTTP
       if (error && typeof error === 'object' && 'response' in error) {
-        const apiError = error as { response?: { data?: { message?: string } } };
+        const apiError = error as { 
+          response?: { 
+            status?: number;
+            data?: { message?: string; error?: string } 
+          } 
+        };
+        
+        // Erro 401 - Credenciais inválidas
+        if (apiError.response?.status === 401) {
+          const errorMessage = apiError.response.data?.message || 
+                             apiError.response.data?.error || 
+                             'Credenciais inválidas. Verifique seu email e senha.';
+          throw new Error(errorMessage);
+        }
+        
+        // Erro 404 - Servidor não encontrado
+        if (apiError.response?.status === 404) {
+          throw new Error('Servidor não encontrado. Verifique se o backend está rodando.');
+        }
+        
+        // Erro de rede
+        if (apiError.response?.status === undefined) {
+          throw new Error('Erro de conexão. Verifique se o backend está acessível.');
+        }
+        
+        // Outros erros HTTP
         if (apiError.response?.data?.message) {
           throw new Error(apiError.response.data.message);
+        }
+        
+        if (apiError.response?.data?.error) {
+          throw new Error(apiError.response.data.error);
         }
       }
       
       if (error instanceof Error) {
-        throw new Error(error.message);
+        throw error;
       } else {
         throw new Error('Erro desconhecido ao fazer login');
       }

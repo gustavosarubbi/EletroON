@@ -13,12 +13,20 @@ import { UsersModule } from '../users/users.module';
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET'),
-        signOptions: {
-          expiresIn: configService.get<string>('JWT_EXPIRATION_TIME') || '24h',
-        },
-      }),
+      // @ts-expect-error - expiresIn type mismatch with jsonwebtoken types
+      useFactory: (configService: ConfigService) => {
+        const jwtSecret = configService.get<string>('JWT_SECRET');
+        if (!jwtSecret) {
+          throw new Error('JWT_SECRET não está configurado');
+        }
+        const expiresIn = configService.get<string>('JWT_EXPIRATION_TIME') || '24h';
+        return {
+          secret: jwtSecret,
+          signOptions: {
+            expiresIn: expiresIn,
+          },
+        };
+      },
       inject: [ConfigService],
     }),
   ],

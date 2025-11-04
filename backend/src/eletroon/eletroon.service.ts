@@ -125,6 +125,41 @@ export class EletroonService {
     return device.readings;
   }
 
+  async getDeviceReadingsByPeriod(
+    meterId: number,
+    startDate?: Date,
+    endDate?: Date,
+    limit: number = 1000,
+  ) {
+    const device = await this.prisma.device.findUnique({
+      where: { meterId },
+    });
+
+    if (!device) {
+      throw new NotFoundException(`Medidor ${meterId} não encontrado`);
+    }
+
+    const where: any = { meterId };
+    
+    if (startDate || endDate) {
+      where.timestamp = {};
+      if (startDate) {
+        where.timestamp.gte = startDate;
+      }
+      if (endDate) {
+        where.timestamp.lte = endDate;
+      }
+    }
+
+    const readings = await this.prisma.reading.findMany({
+      where,
+      orderBy: { timestamp: 'asc' },
+      take: limit,
+    });
+
+    return readings;
+  }
+
   async listarDevices() {
     try {
       const devices = await this.prisma.device.findMany({
@@ -148,29 +183,159 @@ export class EletroonService {
     }
   }
 
-  async listarDevicesDoUsuario(userId: number) {
-    try {
-      const devices = await this.prisma.device.findMany({
-        where: {
-          userId: userId,
-        },
-        select: {
-          meterId: true,
-          name: true,
-          location: true,
-          createdAt: true,
-          updatedAt: true,
-          _count: {
-            select: { readings: true },
+  async getMultipleDevicesReadings(
+    meterIds: number[],
+    startDate?: Date,
+    endDate?: Date,
+    limit: number = 2000,
+  ) {
+    if (!meterIds || meterIds.length === 0) {
+      return [];
+    }
+
+    const where: any = {
+      meterId: { in: meterIds },
+    };
+    
+    if (startDate || endDate) {
+      where.timestamp = {};
+      if (startDate) {
+        where.timestamp.gte = startDate;
+      }
+      if (endDate) {
+        where.timestamp.lte = endDate;
+      }
+    }
+
+    const readings = await this.prisma.reading.findMany({
+      where,
+      orderBy: { timestamp: 'asc' },
+      take: limit,
+    });
+
+    return readings;
+  }
+
+  async exportReadingsReport(
+    meterIds: number[],
+    startDate?: Date,
+    endDate?: Date,
+    format: string = 'csv',
+  ) {
+    const where: any = {};
+    
+    if (meterIds && meterIds.length > 0) {
+      where.meterId = { in: meterIds };
+    }
+    
+    if (startDate || endDate) {
+      where.timestamp = {};
+      if (startDate) {
+        where.timestamp.gte = startDate;
+      }
+      if (endDate) {
+        where.timestamp.lte = endDate;
+      }
+    }
+
+    const readings = await this.prisma.reading.findMany({
+      where,
+      include: {
+        device: {
+          select: {
+            meterId: true,
+            name: true,
+            location: true,
           },
         },
-        orderBy: { meterId: 'asc' },
-      });
+      },
+      orderBy: { timestamp: 'asc' },
+      take: 10000,
+    });
 
-      return devices;
-    } catch (error) {
-      this.logger.error('Falha ao listar devices do usuário', error.stack);
-      throw new InternalServerErrorException('Erro interno ao listar devices do usuário.');
+    if (format === 'csv') {
+      const csvHeaders = [
+        'Timestamp',
+        'Meter ID',
+        'Device Name',
+        'Location',
+        'PA (kW)',
+        'PB (kW)',
+        'PC (kW)',
+        'PT (kW)',
+        'QA (kVAR)',
+        'QB (kVAR)',
+        'QC (kVAR)',
+        'QT (kVAR)',
+        'EPA_C (kWh)',
+        'EPB_C (kWh)',
+        'EPC_C (kWh)',
+        'EPT_C (kWh)',
+        'EPA_G (kWh)',
+        'EPB_G (kWh)',
+        'EPC_G (kWh)',
+        'EPT_G (kWh)',
+        'IARMS (A)',
+        'IBRMS (A)',
+        'ICRMS (A)',
+        'UARMS (V)',
+        'UBRMS (V)',
+        'UCRMS (V)',
+        'PFA',
+        'PFB',
+        'PFC',
+        'PFT',
+      ];
+
+      const csvRows = readings.map(reading => [
+        reading.timestamp.toISOString(),
+        reading.meterId.toString(),
+        reading.device.name || '',
+        reading.device.location || '',
+        reading.pa.toString(),
+        reading.pb.toString(),
+        reading.pc.toString(),
+        reading.pt.toString(),
+        reading.qa.toString(),
+        reading.qb.toString(),
+        reading.qc.toString(),
+        reading.qt.toString(),
+        reading.epa_c.toString(),
+        reading.epb_c.toString(),
+        reading.epc_c.toString(),
+        reading.ept_c.toString(),
+        reading.epa_g.toString(),
+        reading.epb_g.toString(),
+        reading.epc_g.toString(),
+        reading.ept_g.toString(),
+        reading.iarms.toString(),
+        reading.ibrms.toString(),
+        reading.icrms.toString(),
+        reading.uarms.toString(),
+        reading.ubrms.toString(),
+        reading.ucrms.toString(),
+        reading.pfa.toString(),
+        reading.pfb.toString(),
+        reading.pfc.toString(),
+        reading.pft.toString(),
+      ]);
+
+      const csvContent = [
+        csvHeaders.join(','),
+        ...csvRows.map(row => row.map(cell => `"${cell}"`).join(','))
+      ].join('\n');
+
+      return {
+        content: csvContent,
+        filename: `relatorio_energia_${startDate?.toISOString().split('T')[0] || 'all'}_${endDate?.toISOString().split('T')[0] || 'all'}.csv`,
+        contentType: 'text/csv',
+      };
     }
+
+    // JSON format
+    return {
+      content: JSON.stringify(readings, null, 2),
+      filename: `relatorio_energia_${startDate?.toISOString().split('T')[0] || 'all'}_${endDate?.toISOString().split('T')[0] || 'all'}.json`,
+      contentType: 'application/json',
+    };
   }
-}

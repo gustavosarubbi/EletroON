@@ -86,6 +86,7 @@ const UserManager: React.FC = () => {
   const [itemsPerPage] = useState(12);
   const [openActionMenu, setOpenActionMenu] = useState<number | null>(null);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
   
   const [newUser, setNewUser] = useState<NewUserForm>({ 
     email: '', 
@@ -352,6 +353,9 @@ const UserManager: React.FC = () => {
             )}
           </button>
         </th>
+        <th className="table-expand-column">
+          <span>Detalhes</span>
+        </th>
         <th 
           className="table-sortable"
           onClick={() => handleSort('email')}
@@ -401,12 +405,27 @@ const UserManager: React.FC = () => {
     </thead>
   );
 
+  // Toggle expandir linha
+  const toggleRowExpand = (userId: number) => {
+    setExpandedRows(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(userId)) {
+        newSet.delete(userId);
+      } else {
+        newSet.add(userId);
+      }
+      return newSet;
+    });
+  };
+
   // Renderizar linha da tabela
-  const renderTableRow = (user: UserData) => (
-    <tr 
-      key={user.id} 
-      className={selectedUsers.includes(user.id) ? 'table-row-selected' : ''}
-    >
+  const renderTableRow = (user: UserData) => {
+    const isExpanded = expandedRows.has(user.id);
+    return (
+      <React.Fragment key={user.id}>
+        <tr 
+          className={selectedUsers.includes(user.id) ? 'table-row-selected' : ''}
+        >
       <td className="table-checkbox-column">
         <button 
           className="checkbox-btn"
@@ -417,6 +436,15 @@ const UserManager: React.FC = () => {
           ) : (
             <Square size={18} />
           )}
+        </button>
+      </td>
+      <td>
+        <button
+          className="expand-row-btn"
+          onClick={() => toggleRowExpand(user.id)}
+          title={isExpanded ? "Recolher detalhes" : "Expandir detalhes"}
+        >
+          {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </button>
       </td>
       <td>
@@ -496,7 +524,82 @@ const UserManager: React.FC = () => {
         </div>
       </td>
     </tr>
-  );
+    {isExpanded && (
+      <tr className="table-row-expanded">
+        <td colSpan={7}>
+          <div className="expanded-row-content">
+            <div className="expanded-row-section">
+              <h4>Informações do Usuário</h4>
+              <div className="expanded-details">
+                <div className="detail-row">
+                  <span className="detail-label">Email:</span>
+                  <span className="detail-value">{user.email}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Senha:</span>
+                  <span className="detail-value">
+                    {showPasswords[user.id] ? (user.password || 'N/A') : '********'}
+                    <button
+                      className="toggle-password-inline"
+                      onClick={() => togglePasswordVisibility(user.id)}
+                      title={showPasswords[user.id] ? "Ocultar senha" : "Mostrar senha"}
+                    >
+                      {showPasswords[user.id] ? <EyeOff size={14} /> : <Eye size={14} />}
+                    </button>
+                  </span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Função:</span>
+                  <span className="detail-value">
+                    <div className={`role-badge-table ${user.role}`}>
+                      {user.role === 'admin' ? 'Administrador' : 'Usuário'}
+                    </div>
+                  </span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Data de Criação:</span>
+                  <span className="detail-value">
+                    {new Date(user.createdAt).toLocaleString('pt-BR')}
+                  </span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Medidores:</span>
+                  <span className="detail-value">{user.devices.length} associado(s)</span>
+                </div>
+              </div>
+            </div>
+            {user.devices.length > 0 && (
+              <div className="expanded-row-section">
+                <h4>Medidores Associados</h4>
+                <div className="devices-list-expanded">
+                  {user.devices.map(device => (
+                    <div key={device.meterId} className="device-item-expanded">
+                      <div className="device-header-expanded">
+                        <Zap size={16} />
+                        <span className="device-name">{device.name}</span>
+                        <div className={`meter-status-badge ${device.status.toLowerCase()}`}>
+                          {device.status === 'ONLINE' ? <Wifi size={12} /> : <WifiOff size={12} />}
+                          {device.status}
+                        </div>
+                      </div>
+                      {device.location && (
+                        <div className="device-location">
+                          <MapPin size={12} />
+                          {device.location}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </td>
+      </tr>
+    )}
+    </React.Fragment>
+    );
+  };
 
   // Loading State
   if (loading) {
@@ -528,6 +631,7 @@ const UserManager: React.FC = () => {
     );
   }
 
+  // Variáveis calculadas
   const regularUsers = users.filter(user => user.role !== 'admin');
   const selectedUser = users.find(u => u.id === selectedUserId);
 
@@ -564,6 +668,38 @@ const UserManager: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Badge de Filtros Ativos */}
+        {(searchQuery || filterRole !== 'all') && (
+          <div className="filter-badge-container">
+            <div className="filter-badge">
+              <SlidersHorizontal size={14} />
+              <span>Filtros ativos:</span>
+              {searchQuery && (
+                <span className="filter-badge-item">
+                  Busca: "{searchQuery}"
+                  <button 
+                    className="filter-badge-remove"
+                    onClick={() => setSearchQuery('')}
+                  >
+                    <X size={12} />
+                  </button>
+                </span>
+              )}
+              {filterRole !== 'all' && (
+                <span className="filter-badge-item">
+                  {filterRole === 'admin' ? 'Administradores' : 'Usuários'}
+                  <button 
+                    className="filter-badge-remove"
+                    onClick={() => setFilterRole('all')}
+                  >
+                    <X size={12} />
+                  </button>
+                </span>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Toolbar Moderna */}
         <div className="toolbar-modern">

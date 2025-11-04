@@ -62,10 +62,31 @@ export const dashboardService = {
   // Buscar leituras de um dispositivo
   async getDeviceReadings(meterId: number, limit = 100): Promise<Reading[]> {
     try {
-      const response = await api.get(`/eletroon/readings/${meterId}?limit=${limit}`);
+      const response = await api.get(`/eletroon/${meterId}?limit=${limit}`);
       return response.data;
     } catch (error) {
       console.error('Erro ao buscar leituras:', error);
+      throw error;
+    }
+  },
+
+  // Buscar leituras de um dispositivo por período
+  async getDeviceReadingsByPeriod(
+    meterId: number,
+    startDate?: Date,
+    endDate?: Date,
+    limit = 1000
+  ): Promise<Reading[]> {
+    try {
+      const params = new URLSearchParams();
+      if (startDate) params.append('startDate', startDate.toISOString());
+      if (endDate) params.append('endDate', endDate.toISOString());
+      if (limit) params.append('limit', limit.toString());
+      
+      const response = await api.get(`/eletroon/${meterId}/readings?${params}`);
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao buscar leituras por período:', error);
       throw error;
     }
   },
@@ -137,16 +158,55 @@ export const dashboardService = {
     }
   },
 
-  // Buscar dados para gráficos
-  async getChartData(meterId: number, metric: string, hours = 24): Promise<any> {
+  // Buscar leituras de múltiplos dispositivos por período
+  async getMultipleDevicesReadingsByPeriod(
+    meterIds: number[],
+    startDate?: Date,
+    endDate?: Date,
+    limit = 2000
+  ): Promise<Reading[]> {
     try {
-      const response = await api.get(`/eletroon/chart/${meterId}/${metric}?hours=${hours}`);
+      const params = new URLSearchParams();
+      if (meterIds && meterIds.length > 0) {
+        params.append('meterIds', meterIds.join(','));
+      }
+      if (startDate) params.append('startDate', startDate.toISOString());
+      if (endDate) params.append('endDate', endDate.toISOString());
+      if (limit) params.append('limit', limit.toString());
+      
+      const response = await api.get(`/eletroon/devices/readings/multiple?${params}`);
       return response.data;
     } catch (error) {
-      console.error('Erro ao buscar dados do gráfico:', error);
+      console.error('Erro ao buscar leituras de múltiplos dispositivos:', error);
       throw error;
     }
-  }
+  },
+
+  // Exportar relatório
+  async exportReport(
+    meterIds: number[],
+    startDate?: Date,
+    endDate?: Date,
+    format: 'csv' | 'json' = 'csv'
+  ): Promise<Blob> {
+    try {
+      const params = new URLSearchParams();
+      if (meterIds && meterIds.length > 0) {
+        params.append('meterIds', meterIds.join(','));
+      }
+      if (startDate) params.append('startDate', startDate.toISOString());
+      if (endDate) params.append('endDate', endDate.toISOString());
+      params.append('format', format);
+      
+      const response = await api.get(`/eletroon/devices/readings/export?${params}`, {
+        responseType: 'blob',
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao exportar relatório:', error);
+      throw error;
+    }
+  },
 };
 
 export default dashboardService;

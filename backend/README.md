@@ -23,25 +23,80 @@
 
 ## Description
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+API Backend do EletroON - Sistema de monitoramento de energia elétrica usando NestJS e PostgreSQL.
 
-## Project setup
+## Configuração Inicial
+
+### 1. Instalar Dependências
 
 ```bash
 $ pnpm install
 ```
 
-## Compile and run the project
+### 2. Configurar Banco de Dados PostgreSQL (Sem Docker)
+
+**Importante:** Este projeto está configurado para usar PostgreSQL localmente, sem Docker.
+
+1. **Instale o PostgreSQL** (se ainda não tiver):
+   - Download: https://www.postgresql.org/download/windows/
+   - Durante a instalação, configure uma senha para o usuário `postgres`
+
+2. **Configure o arquivo `.env`** na raiz do projeto:
+   ```env
+   DATABASE_URL=postgresql://postgres:SUA_SENHA@localhost:5432/eletroon?schema=public
+   JWT_SECRET=sua-chave-secreta-jwt-super-segura-altere-em-producao-2024
+   JWT_EXPIRATION_TIME=24h
+   PORT=3000
+   NODE_ENV=development
+   CORS_ORIGINS=*
+   DEFAULT_ADMIN_EMAIL=admin@eletroon.com
+   DEFAULT_ADMIN_PASSWORD=admin123
+   DEFAULT_USER_EMAIL=usuario@eletroon.com
+   DEFAULT_USER_PASSWORD=User@123
+   ```
+
+3. **Configure o banco de dados**:
+   ```powershell
+   # Opção 1: Script automático (recomendado)
+   .\setup-database.ps1
+   
+   # Opção 2: Manual
+   # Crie o banco: psql -U postgres -c "CREATE DATABASE eletroon;"
+   pnpm prisma:generate
+   pnpm prisma:migrate:deploy
+   ```
+
+📖 **Para mais detalhes, consulte:** [CONFIGURACAO_BANCO.md](./CONFIGURACAO_BANCO.md)
+
+## Executar o Projeto
 
 ```bash
-# development
-$ pnpm run start
-
-# watch mode
+# Modo desenvolvimento (com watch)
 $ pnpm run start:dev
 
-# production mode
+# Modo produção
 $ pnpm run start:prod
+
+# Modo normal
+$ pnpm run start
+```
+
+A API estará disponível em: `http://localhost:3000/api`
+
+## Comandos Úteis do Prisma
+
+```bash
+# Gerar Prisma Client
+$ pnpm prisma:generate
+
+# Executar migrações
+$ pnpm prisma:migrate
+
+# Aplicar migrações em produção
+$ pnpm prisma:migrate:deploy
+
+# Abrir Prisma Studio (interface visual do banco)
+$ pnpm prisma:studio
 ```
 
 ## Run tests

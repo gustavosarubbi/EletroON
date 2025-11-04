@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   BarChart3
 } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface SidebarProps {
   isVisible: boolean;
@@ -16,6 +17,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ isVisible, onClose }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { logout } = useAuth();
 
   if (!isVisible) {
     return null;
@@ -28,6 +30,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isVisible, onClose }) => {
 
   const isActive = (path: string) => {
     return location.pathname === path || location.pathname.startsWith(path + '/');
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+    onClose();
   };
 
   return (
@@ -58,7 +66,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isVisible, onClose }) => {
             onClick={onClose}
             title="Fechar"
           >
-            <X size={18} />
+            <X size={22} />
           </button>
         </div>
 
@@ -91,6 +99,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isVisible, onClose }) => {
             </div>
           </div>
         </nav>
+
+        {/* Botão de Logout */}
+        <div className="dashboard-sidebar-logout-section">
+          <button 
+            className="dashboard-nav-item dashboard-logout-btn"
+            onClick={handleLogout}
+          >
+            <Power size={20} />
+            <span>Sair</span>
+          </button>
+        </div>
 
         {/* Footer */}
         <div className="dashboard-sidebar-footer">

@@ -127,13 +127,14 @@
   cursor: pointer;
   position: fixed;
   top: 20px;
-  left: 6px;
+  left: 24px;
   z-index: 1001;
   box-shadow: 
     0 4px 12px rgba(7, 16, 51, 0.4),
     0 2px 4px rgba(0, 0, 0, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
 }
 
 .dashboard-menu-toggle:hover {
@@ -161,8 +162,8 @@
 }
 
 .dashboard-menu-toggle svg {
-  width: 56px;
-  height: 48px;
+  width: 68px;
+  height: 58px;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -474,12 +475,12 @@
     width: 44px;
     height: 44px;
     top: 16px;
-    left: 12px;
+    left: 20px;
   }
   
   .dashboard-menu-toggle svg {
-    width: 30px;
-    height: 24px;
+    width: 54px;
+    height: 46px;
   }
   
   .dashboard-main-title {
@@ -543,12 +544,12 @@
     border-width: 1.5px;
     border-radius: 10px;
     top: 14px;
-    left: 10px;
+    left: 16px;
   }
   
   .dashboard-menu-toggle svg {
-    width: 28px;
-    height: 22px;
+    width: 50px;
+    height: 42px;
   }
   
   .logs-header svg {

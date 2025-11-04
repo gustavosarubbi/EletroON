@@ -13,7 +13,6 @@ import { UsersModule } from '../users/users.module';
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      // @ts-expect-error - expiresIn type mismatch with jsonwebtoken types
       useFactory: (configService: ConfigService) => {
         const jwtSecret = configService.get<string>('JWT_SECRET');
         if (!jwtSecret) {

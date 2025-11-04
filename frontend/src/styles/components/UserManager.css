@@ -91,6 +91,70 @@
   letter-spacing: 0.5px;
 }
 
+/* ===== BADGE DE FILTROS ===== */
+.filter-badge-container {
+  margin-bottom: 16px;
+}
+
+.filter-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  background: rgba(59, 130, 246, 0.15);
+  border: 1.5px solid rgba(59, 130, 246, 0.3);
+  border-radius: 12px;
+  backdrop-filter: blur(8px);
+  flex-wrap: wrap;
+}
+
+.filter-badge svg {
+  color: #60a5fa;
+  flex-shrink: 0;
+}
+
+.filter-badge > span:first-of-type {
+  font-size: 13px;
+  font-weight: 600;
+  color: #60a5fa;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.filter-badge-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.filter-badge-remove {
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.filter-badge-remove:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  transform: scale(1.1);
+}
+
 /* ===== TOOLBAR MODERNA ===== */
 .toolbar-modern {
   display: flex;
@@ -1211,23 +1275,177 @@
 
 .checkbox-header-btn,
 .checkbox-btn {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
-  border: none;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.6);
+  border-radius: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.7);
   cursor: pointer;
   transition: all 0.2s ease;
+  font-weight: 600;
 }
 
 .checkbox-header-btn:hover,
 .checkbox-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.4);
   color: #60a5fa;
+  transform: scale(1.05);
+}
+
+.checkbox-header-btn:active,
+.checkbox-btn:active {
+  transform: scale(0.95);
+}
+
+.table-expand-column {
+  width: 80px;
+  text-align: center;
+}
+
+.expand-row-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  background: rgba(139, 92, 246, 0.1);
+  color: #a78bfa;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin: 0 auto;
+}
+
+.expand-row-btn:hover {
+  background: rgba(139, 92, 246, 0.2);
+  border-color: rgba(139, 92, 246, 0.4);
+  transform: scale(1.1);
+}
+
+.table-row-expanded {
+  background: rgba(15, 23, 42, 0.8);
+}
+
+.table-row-expanded td {
+  padding: 0 !important;
+  border-top: none;
+}
+
+.expanded-row-content {
+  padding: 20px 24px;
+  background: rgba(15, 23, 42, 0.6);
+  border-top: 2px solid rgba(59, 130, 246, 0.2);
+}
+
+.expanded-row-section {
+  margin-bottom: 20px;
+}
+
+.expanded-row-section:last-child {
+  margin-bottom: 0;
+}
+
+.expanded-row-section h4 {
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.95);
+  margin: 0 0 12px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.expanded-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 12px;
+}
+
+.detail-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.detail-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  min-width: 100px;
+}
+
+.detail-value {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toggle-password-inline {
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 6px;
+  padding: 4px 8px;
+  color: #60a5fa;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  margin-left: 8px;
+}
+
+.toggle-password-inline:hover {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: rgba(59, 130, 246, 0.5);
+}
+
+.devices-list-expanded {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.device-item-expanded {
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.device-header-expanded {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.device-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  flex: 1;
+}
+
+.device-location {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 6px;
 }
 
 .table-sortable {

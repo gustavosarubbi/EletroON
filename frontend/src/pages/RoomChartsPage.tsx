@@ -2,7 +2,6 @@ import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import LoginParticles from '../components/ui/LoginParticles';
 import Sidebar from '../components/dashboard/Sidebar';
-import Header from '../components/dashboard/Header';
 import Chart from '../components/dashboard/Chart';
 import '../styles/components/Dashboard.css';
 
@@ -14,10 +13,21 @@ const RoomChartsPage: React.FC = () => {
     <div className="dashboard-page-container">
       <LoginParticles />
       
-      <Header 
-        onToggleSidebar={() => setSidebarVisible(!sidebarVisible)}
-        sidebarVisible={sidebarVisible}
-      />
+      {/* Botão de Menu - Visível apenas quando sidebar está fechado */}
+      {!sidebarVisible && (
+        <button 
+          className="dashboard-menu-toggle"
+          onClick={() => setSidebarVisible(!sidebarVisible)}
+          title="Abrir menu"
+          aria-label="Toggle sidebar"
+        >
+          <svg width="56" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect y="0" width="24" height="6" rx="3" fill="white"/>
+            <rect y="10" width="24" height="6" rx="3" fill="white"/>
+            <rect y="20" width="24" height="6" rx="3" fill="white"/>
+          </svg>
+        </button>
+      )}
       
       <Sidebar 
         isVisible={sidebarVisible}

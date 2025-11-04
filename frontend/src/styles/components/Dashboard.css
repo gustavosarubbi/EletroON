@@ -624,3 +624,25 @@
     transition: none !important;
   }
 }
+
+/* Estilos customizados para marcadores da legenda do gráfico */
+.chart-container canvas {
+  max-height: 100% !important;
+}
+
+/* Forçar círculos compactos na legenda */
+.chart-container ul[class*="legend"] li span,
+.chart-container div[class*="legend"] span {
+  border-radius: 50% !important;
+  width: 8px !important;
+  height: 8px !important;
+  display: inline-block !important;
+  margin-right: 6px !important;
+  vertical-align: middle !important;
+}
+
+.chart-container canvas + div[class*="legend"] span[style*="background-color"] {
+  border-radius: 50% !important;
+  width: 8px !important;
+  height: 8px !important;
+}

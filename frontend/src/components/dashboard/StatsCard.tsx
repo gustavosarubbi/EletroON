@@ -40,14 +40,14 @@ const StatsCard: React.FC<StatsCardProps> = ({
         {subtitle && (
           <div className="stats-subtitle">{subtitle}</div>
         )}
-        {percentage !== undefined && (
-          <div className="stats-progress">
-            <div 
-              className={`stats-progress-bar ${color}`}
-              style={{ width: `${Math.min(percentage, 100)}%` }}
-            ></div>
-          </div>
-        )}
+        <div className="stats-progress">
+          <div 
+            className={`stats-progress-bar ${color}`}
+            style={{ 
+              width: '100%'
+            }}
+          ></div>
+        </div>
       </div>
       
       {trend && (

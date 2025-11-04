@@ -130,62 +130,34 @@
 
 /* AMBER CARD - Medidores Disponíveis */
 .stats-card.amber {
-  border-color: rgba(251, 146, 60, 0.3);
-  box-shadow: 
-    0 4px 12px rgba(0, 0, 0, 0.3),
-    0 0 0 1px rgba(251, 146, 60, 0.1);
+  border-color: rgba(251, 146, 60, 0.2);
 }
 
 .stats-card.amber::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  border-radius: 16px 16px 0 0;
-  background: linear-gradient(90deg, 
-    rgba(251, 146, 60, 1) 0%, 
-    rgba(251, 191, 36, 1) 50%, 
-    rgba(251, 146, 60, 1) 100%);
-  box-shadow: 0 0 8px rgba(251, 146, 60, 0.6);
-  opacity: 1;
-  z-index: 2;
+  background: rgba(251, 146, 60, 0.6);
 }
 
 .stats-card.amber:hover {
   background: rgba(15, 23, 42, 0.85);
-  border-color: rgba(251, 146, 60, 0.5);
-  box-shadow: 
-    0 6px 16px rgba(0, 0, 0, 0.4),
-    0 0 0 1px rgba(251, 146, 60, 0.2),
-    0 0 20px rgba(251, 146, 60, 0.2);
+  border-color: rgba(251, 146, 60, 0.3);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
 }
 
 .stats-card.amber .status-indicator {
   background: #fb923c;
-  box-shadow: 0 0 8px rgba(251, 146, 60, 0.6);
 }
 
 .stats-card.amber .stats-icon {
-  background: rgba(251, 146, 60, 0.2);
-  border: 1px solid rgba(251, 146, 60, 0.4);
-  box-shadow: 
-    0 2px 8px rgba(251, 146, 60, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  background: rgba(251, 146, 60, 0.15);
+  border: 1px solid rgba(251, 146, 60, 0.3);
 }
 
 .stats-card.amber .stats-icon svg {
   color: #fb923c;
-  filter: drop-shadow(0 0 4px rgba(251, 146, 60, 0.5));
 }
 
 .stats-card.amber .stats-progress-bar {
-  background: linear-gradient(90deg, 
-    #fb923c 0%, 
-    #fbbf24 50%, 
-    #fb923c 100%);
-  box-shadow: 0 0 8px rgba(251, 146, 60, 0.5);
+  background: #fb923c;
 }
 
 /* Card Header */
@@ -246,6 +218,7 @@
 
 .stats-card:hover .stats-icon svg {
   /* Sem mudanças de brilho */
+  color: inherit;
 }
 
 /* Card Content */
@@ -269,6 +242,7 @@
 
 .stats-card:hover .stats-value {
   /* Sem transform */
+  transform: none;
 }
 
 .stats-subtitle {
@@ -296,10 +270,14 @@
   transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
+  min-width: 2px;
+  /* Cor padrão - será sobrescrita pelos cards específicos */
+  background: transparent;
 }
 
 .stats-progress-bar::after {
   /* Removido shimmer brilhante */
+  content: none;
 }
 
 /* Trend Indicator */

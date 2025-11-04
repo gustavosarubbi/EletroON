@@ -18,9 +18,20 @@ import {
   Loader2,
   AlertCircle,
   Search,
-  Filter,
+  SlidersHorizontal,
   Users as UsersIcon,
-  CheckCircle2
+  CheckCircle2,
+  MoreVertical,
+  LayoutGrid,
+  List,
+  ChevronDown,
+  ChevronUp,
+  Download,
+  CheckSquare,
+  Square,
+  RefreshCw,
+  FileText,
+  FilterX
 } from 'lucide-react';
 import { dashboardService } from '../../services/dashboardService';
 import '../../styles/components/UserManager.css';
@@ -67,6 +78,15 @@ const UserManager: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterRole, setFilterRole] = useState<'all' | 'admin' | 'user'>('all');
   
+  // Novos estados para funcionalidades modernas
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+  const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
+  const [sortConfig, setSortConfig] = useState<{ key: keyof UserData | 'devices'; direction: 'asc' | 'desc' } | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(12);
+  const [openActionMenu, setOpenActionMenu] = useState<number | null>(null);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  
   const [newUser, setNewUser] = useState<NewUserForm>({ 
     email: '', 
     password: '', 
@@ -94,6 +114,30 @@ const UserManager: React.FC = () => {
   useEffect(() => {
     loadUsersData();
   }, []);
+
+  // Fechar menu de ações ao clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (openActionMenu !== null) {
+        const target = event.target as HTMLElement;
+        if (!target.closest('.table-action-menu')) {
+          setOpenActionMenu(null);
+        }
+      }
+    };
+
+    if (openActionMenu !== null) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [openActionMenu]);
+
+  // Resetar página quando filtros mudarem
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterRole]);
 
   // Handlers
   const togglePasswordVisibility = (userId: number) => {
@@ -195,6 +239,265 @@ const UserManager: React.FC = () => {
     return matchesSearch && matchesFilter;
   });
 
+  // Novas funções para funcionalidades modernas
+  const handleSort = (key: keyof UserData | 'devices') => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const sortedUsers = React.useMemo(() => {
+    let sortableUsers = [...filteredUsers];
+    if (sortConfig) {
+      sortableUsers.sort((a, b) => {
+        let aValue: any;
+        let bValue: any;
+
+        if (sortConfig.key === 'devices') {
+          aValue = a.devices.length;
+          bValue = b.devices.length;
+        } else {
+          aValue = a[sortConfig.key];
+          bValue = b[sortConfig.key];
+        }
+
+        if (aValue < bValue) {
+          return sortConfig.direction === 'asc' ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return sortConfig.direction === 'asc' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableUsers;
+  }, [filteredUsers, sortConfig]);
+
+  const paginatedUsers = React.useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return sortedUsers.slice(startIndex, startIndex + itemsPerPage);
+  }, [sortedUsers, currentPage, itemsPerPage]);
+
+  const totalPages = Math.ceil(sortedUsers.length / itemsPerPage);
+
+  const handleSelectUser = (userId: number) => {
+    setSelectedUsers(prev => 
+      prev.includes(userId) 
+        ? prev.filter(id => id !== userId)
+        : [...prev, userId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedUsers.length === paginatedUsers.length) {
+      setSelectedUsers([]);
+    } else {
+      setSelectedUsers(paginatedUsers.map(u => u.id));
+    }
+  };
+
+  const handleBulkDelete = () => {
+    if (window.confirm(`Tem certeza que deseja excluir ${selectedUsers.length} usuário(s)?`)) {
+      setUsers(users.filter(user => !selectedUsers.includes(user.id)));
+      setSelectedUsers([]);
+    }
+  };
+
+  const handleExport = (format: 'csv' | 'json') => {
+    const data = filteredUsers.map(user => ({
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      createdAt: user.createdAt,
+      devicesCount: user.devices.length
+    }));
+
+    if (format === 'csv') {
+      const headers = ['ID', 'Email', 'Role', 'Data de Criação', 'Medidores'];
+      const csvContent = [
+        headers.join(','),
+        ...data.map(u => [u.id, u.email, u.role, u.createdAt, u.devicesCount].join(','))
+      ].join('\n');
+      
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `usuarios_${new Date().toISOString().split('T')[0]}.csv`;
+      link.click();
+    } else {
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `usuarios_${new Date().toISOString().split('T')[0]}.json`;
+      link.click();
+    }
+  };
+
+  // Renderizar cabeçalho da tabela
+  const renderTableHeader = () => (
+    <thead>
+      <tr>
+        <th className="table-checkbox-column">
+          <button 
+            className="checkbox-header-btn"
+            onClick={handleSelectAll}
+            title="Selecionar todos"
+          >
+            {selectedUsers.length === paginatedUsers.length && paginatedUsers.length > 0 ? (
+              <CheckSquare size={18} />
+            ) : (
+              <Square size={18} />
+            )}
+          </button>
+        </th>
+        <th 
+          className="table-sortable"
+          onClick={() => handleSort('email')}
+        >
+          <div className="sort-header">
+            <span>Email</span>
+            {sortConfig?.key === 'email' && (
+              sortConfig.direction === 'asc' ? <ChevronUp size={16} /> : <ChevronDown size={16} />
+            )}
+          </div>
+        </th>
+        <th 
+          className="table-sortable"
+          onClick={() => handleSort('role')}
+        >
+          <div className="sort-header">
+            <span>Tipo</span>
+            {sortConfig?.key === 'role' && (
+              sortConfig.direction === 'asc' ? <ChevronUp size={16} /> : <ChevronDown size={16} />
+            )}
+          </div>
+        </th>
+        <th 
+          className="table-sortable"
+          onClick={() => handleSort('devices')}
+        >
+          <div className="sort-header">
+            <span>Medidores</span>
+            {sortConfig?.key === 'devices' && (
+              sortConfig.direction === 'asc' ? <ChevronUp size={16} /> : <ChevronDown size={16} />
+            )}
+          </div>
+        </th>
+        <th 
+          className="table-sortable"
+          onClick={() => handleSort('createdAt')}
+        >
+          <div className="sort-header">
+            <span>Data de Criação</span>
+            {sortConfig?.key === 'createdAt' && (
+              sortConfig.direction === 'asc' ? <ChevronUp size={16} /> : <ChevronDown size={16} />
+            )}
+          </div>
+        </th>
+        <th className="table-actions-column">Ações</th>
+      </tr>
+    </thead>
+  );
+
+  // Renderizar linha da tabela
+  const renderTableRow = (user: UserData) => (
+    <tr 
+      key={user.id} 
+      className={selectedUsers.includes(user.id) ? 'table-row-selected' : ''}
+    >
+      <td className="table-checkbox-column">
+        <button 
+          className="checkbox-btn"
+          onClick={() => handleSelectUser(user.id)}
+        >
+          {selectedUsers.includes(user.id) ? (
+            <CheckSquare size={18} />
+          ) : (
+            <Square size={18} />
+          )}
+        </button>
+      </td>
+      <td>
+        <div className="table-cell-email">
+          <Mail size={16} />
+          <span>{user.email}</span>
+        </div>
+      </td>
+      <td>
+        <div className={`role-badge-table ${user.role}`}>
+          {user.role === 'admin' ? 'Administrador' : 'Usuário'}
+        </div>
+      </td>
+      <td>
+        <div className="table-cell-meters">
+          <Zap size={16} />
+          <span>{user.devices.length}</span>
+        </div>
+      </td>
+      <td>
+        <div className="table-cell-date">
+          <Clock size={16} />
+          <span>{new Date(user.createdAt).toLocaleDateString('pt-BR')}</span>
+        </div>
+      </td>
+      <td>
+        <div className="table-actions-cell">
+          <div className="table-action-buttons">
+            <button
+              className="table-action-btn edit"
+              onClick={() => handleEditUser(user.id)}
+              title="Editar"
+            >
+              <Edit3 size={16} />
+            </button>
+            <button
+              className="table-action-btn delete"
+              onClick={() => handleDeleteUser(user.id)}
+              title="Excluir"
+            >
+              <Trash2 size={16} />
+            </button>
+            <div className="table-action-menu">
+              <button
+                className="table-action-btn menu"
+                onClick={() => setOpenActionMenu(openActionMenu === user.id ? null : user.id)}
+                title="Mais opções"
+              >
+                <MoreVertical size={16} />
+              </button>
+              {openActionMenu === user.id && (
+                <div className="action-menu-dropdown">
+                  <button 
+                    className="action-menu-item"
+                    onClick={() => {
+                      setSelectedUserId(user.id);
+                      setOpenActionMenu(null);
+                    }}
+                  >
+                    <Zap size={16} />
+                    <span>Ver Medidores</span>
+                  </button>
+                  <button 
+                    className="action-menu-item"
+                    onClick={() => {
+                      togglePasswordVisibility(user.id);
+                      setOpenActionMenu(null);
+                    }}
+                  >
+                    {showPasswords[user.id] ? <EyeOff size={16} /> : <Eye size={16} />}
+                    <span>{showPasswords[user.id] ? 'Ocultar' : 'Mostrar'} Senha</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </td>
+    </tr>
+  );
+
   // Loading State
   if (loading) {
     return (
@@ -262,51 +565,123 @@ const UserManager: React.FC = () => {
           </div>
         </div>
 
-        {/* Barra de Busca e Filtros */}
-        <div className="header-controls">
-          <div className="search-container">
-            <Search className="search-icon" size={20} />
-            <input
-              type="text"
-              className="search-input"
-              placeholder="Buscar por email..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <div className="filter-container">
-            <Filter className="filter-icon" size={18} />
-            <select 
-              className="filter-select"
-              value={filterRole}
-              onChange={(e) => setFilterRole(e.target.value as 'all' | 'admin' | 'user')}
+        {/* Toolbar Moderna */}
+        <div className="toolbar-modern">
+          <div className="toolbar-left">
+            <div className="search-container">
+              <Search className="search-icon" size={20} />
+              <input
+                type="text"
+                className="search-input"
+                placeholder="Buscar por email..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <div className="filter-container">
+              <SlidersHorizontal className="filter-icon" size={18} />
+              <select 
+                className="filter-select"
+                value={filterRole}
+                onChange={(e) => setFilterRole(e.target.value as 'all' | 'admin' | 'user')}
+              >
+                <option value="all">Todos</option>
+                <option value="admin">Administradores</option>
+                <option value="user">Usuários</option>
+              </select>
+            </div>
+            <button 
+              className="toolbar-btn secondary"
+              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
             >
-              <option value="all">Todos</option>
-              <option value="admin">Administradores</option>
-              <option value="user">Usuários</option>
-            </select>
+              <FilterX size={18} />
+              <span>Filtros</span>
+            </button>
           </div>
-        </div>
 
-        {/* Botões de Ação */}
-        <div className="header-actions">
-          <button 
-            className="action-btn manage-meters"
-            onClick={() => setShowMeterManagement(!showMeterManagement)}
-          >
-            <Zap size={18} />
-            <span>Gerenciar Medidores</span>
-          </button>
-          <button 
-            className="action-btn add-user"
-            onClick={() => {
-              setShowAddForm(!showAddForm);
-              setShowMeterManagement(false);
-            }}
-          >
-            <Plus size={18} />
-            <span>Adicionar Usuário</span>
-          </button>
+          <div className="toolbar-right">
+            {selectedUsers.length > 0 && (
+              <div className="bulk-actions-bar">
+                <span className="bulk-selection-count">
+                  {selectedUsers.length} selecionado(s)
+                </span>
+                <button 
+                  className="bulk-action-btn delete"
+                  onClick={handleBulkDelete}
+                >
+                  <Trash2 size={16} />
+                  <span>Excluir</span>
+                </button>
+                <button 
+                  className="bulk-action-btn clear"
+                  onClick={() => setSelectedUsers([])}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            )}
+            
+            <div className="view-mode-toggle">
+              <button
+                className={`view-mode-btn ${viewMode === 'grid' ? 'active' : ''}`}
+                onClick={() => setViewMode('grid')}
+                title="Vista em grade"
+              >
+                <LayoutGrid size={18} />
+              </button>
+              <button
+                className={`view-mode-btn ${viewMode === 'table' ? 'active' : ''}`}
+                onClick={() => setViewMode('table')}
+                title="Vista em tabela"
+              >
+                <List size={18} />
+              </button>
+            </div>
+
+            <div className="export-menu">
+              <button className="toolbar-btn secondary">
+                <Download size={18} />
+                <span>Exportar</span>
+                <ChevronDown size={16} />
+              </button>
+              <div className="export-dropdown">
+                <button className="export-option" onClick={() => handleExport('csv')}>
+                  <FileText size={16} />
+                  <span>Exportar como CSV</span>
+                </button>
+                <button className="export-option" onClick={() => handleExport('json')}>
+                  <FileText size={16} />
+                  <span>Exportar como JSON</span>
+                </button>
+              </div>
+            </div>
+
+            <button 
+              className="toolbar-btn secondary"
+              onClick={loadUsersData}
+              title="Atualizar"
+            >
+              <RefreshCw size={18} />
+            </button>
+
+                          <button 
+                className="action-btn manage-meters"
+                onClick={() => setShowMeterManagement(!showMeterManagement)}
+              >
+                <span>Gerenciar Medidores</span>
+              </button>
+
+            <button 
+              className="action-btn add-user"
+              onClick={() => {
+                setShowAddForm(!showAddForm);
+                setShowMeterManagement(false);
+              }}
+            >
+              <Plus size={18} />
+              <span>Adicionar Usuário</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -467,8 +842,8 @@ const UserManager: React.FC = () => {
         </div>
       )}
 
-      {/* Lista de Usuários */}
-      {!showAddForm && !showMeterManagement && (
+      {/* Lista de Usuários - Vista em Grid */}
+      {!showAddForm && !showMeterManagement && viewMode === 'grid' && (
         <div className="users-grid">
           {filteredUsers.length > 0 ? (
             filteredUsers.map(user => (
@@ -594,6 +969,56 @@ const UserManager: React.FC = () => {
               <Search size={64} />
               <h4>Nenhum usuário encontrado</h4>
               <p>Tente ajustar os filtros de busca</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Lista de Usuários - Vista em Tabela */}
+      {!showAddForm && !showMeterManagement && viewMode === 'table' && (
+        <div className="table-container-modern">
+          <table className="users-table-modern">
+            {renderTableHeader()}
+            <tbody>
+              {paginatedUsers.length > 0 ? (
+                paginatedUsers.map(user => renderTableRow(user))
+              ) : (
+                <tr>
+                  <td colSpan={6} className="table-empty">
+                    <div className="empty-state">
+                      <Search size={64} />
+                      <h4>Nenhum usuário encontrado</h4>
+                      <p>Tente ajustar os filtros de busca</p>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+
+          {/* Paginação */}
+          {totalPages > 1 && (
+            <div className="pagination-modern">
+              <button
+                className="pagination-btn"
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+              >
+                <ChevronDown size={18} style={{ transform: 'rotate(90deg)' }} />
+              </button>
+              
+              <div className="pagination-info">
+                Página <strong>{currentPage}</strong> de <strong>{totalPages}</strong>
+                <span className="pagination-total">({sortedUsers.length} usuários)</span>
+              </div>
+
+              <button
+                className="pagination-btn"
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+              >
+                <ChevronDown size={18} style={{ transform: 'rotate(-90deg)' }} />
+              </button>
             </div>
           )}
         </div>

@@ -63,12 +63,33 @@ const Chart: React.FC<ChartProps> = ({ data, title, height = 300, type = 'line' 
     plugins: {
       legend: {
         position: 'top' as const,
+        align: 'center' as const,
         labels: {
           usePointStyle: true,
-          padding: 15,
-          color: 'rgba(255, 255, 255, 0.8)',
+          pointStyle: 'circle',
+          padding: 8,
+          color: 'rgba(255, 255, 255, 0.9)',
           font: {
-            size: 12
+            size: 11,
+            weight: '500' as const,
+            family: "'Inter', 'Segoe UI', sans-serif"
+          },
+          boxWidth: 6,
+          boxHeight: 6,
+          boxPadding: 3,
+          generateLabels: function(chart: any) {
+            const original = ChartJS.defaults.plugins.legend.labels.generateLabels;
+            const labels = original.call(this, chart);
+            labels.forEach((label: any) => {
+              label.fillStyle = label.strokeStyle || label.backgroundColor;
+              label.lineWidth = 0;
+              label.pointStyle = 'circle';
+              label.usePointStyle = true;
+              label.radius = 3;
+              label.boxWidth = 6;
+              label.boxHeight = 6;
+            });
+            return labels;
           }
         }
       },

@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckSquare, Square, ChevronUp, ChevronDown, Mail, Shield, Zap, Calendar, List } from 'lucide-react';
+import { CheckSquare, Square, ChevronUp, ChevronDown, Mail, Shield, Zap, Calendar, List, Lock, Settings } from 'lucide-react';
 import { SortConfig, SortKey } from '../types';
 
 interface UserTableHeaderProps {
@@ -21,8 +21,10 @@ const UserTableHeader: React.FC<UserTableHeaderProps> = ({
   const someSelected = selectedUsers.length > 0 && selectedUsers.length < usersCount;
 
   const getSortIcon = (key: SortKey) => {
-    if (sortConfig?.key !== key) return null;
-    return sortConfig.direction === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />;
+    if (sortConfig?.key === key) {
+      return sortConfig.direction === 'asc' ? <ChevronUp size={14} className="sort-icon-active" /> : <ChevronDown size={14} className="sort-icon-active" />;
+    }
+    return <ChevronUp size={14} className="sort-icon-inactive" />;
   };
 
   return (
@@ -30,7 +32,6 @@ const UserTableHeader: React.FC<UserTableHeaderProps> = ({
       <tr>
         <th className="table-checkbox-column">
           <div className="checkbox-header-wrapper">
-            <List size={14} className="checkbox-header-icon" />
             <button 
               className={`checkbox-header-btn ${allSelected ? 'checked' : ''} ${someSelected ? 'partial' : ''}`}
               onClick={onSelectAll}
@@ -38,22 +39,24 @@ const UserTableHeader: React.FC<UserTableHeaderProps> = ({
               aria-label={allSelected ? 'Desmarcar todos os usuários' : 'Selecionar todos os usuários'}
               aria-pressed={allSelected}
             >
+              <List size={16} className="checkbox-header-icon" />
               {allSelected ? (
                 <>
-                  <CheckSquare size={16} />
+                  <CheckSquare size={18} />
                   <span>Todos</span>
                 </>
               ) : (
                 <>
-                  <Square size={16} />
+                  <Square size={18} />
                   <span>Todos</span>
                 </>
               )}
             </button>
+            <div className="checkbox-header-spacer"></div>
           </div>
         </th>
         <th 
-          className={`table-sortable ${sortConfig?.key === 'email' ? 'active' : ''}`}
+          className={`table-sortable table-email-column ${sortConfig?.key === 'email' ? 'active' : ''}`}
           onClick={() => onSort('email')}
           role="columnheader"
           aria-sort={sortConfig?.key === 'email' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
@@ -64,8 +67,14 @@ const UserTableHeader: React.FC<UserTableHeaderProps> = ({
             {getSortIcon('email')}
           </div>
         </th>
+        <th className="table-password-column">
+          <div className="sort-header">
+            <Lock size={14} />
+            <span>Senha</span>
+          </div>
+        </th>
         <th 
-          className={`table-sortable ${sortConfig?.key === 'role' ? 'active' : ''}`}
+          className={`table-sortable table-role-column ${sortConfig?.key === 'role' ? 'active' : ''}`}
           onClick={() => onSort('role')}
           role="columnheader"
           aria-sort={sortConfig?.key === 'role' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
@@ -77,7 +86,7 @@ const UserTableHeader: React.FC<UserTableHeaderProps> = ({
           </div>
         </th>
         <th 
-          className={`table-sortable ${sortConfig?.key === 'devices' ? 'active' : ''}`}
+          className={`table-sortable table-devices-column ${sortConfig?.key === 'devices' ? 'active' : ''}`}
           onClick={() => onSort('devices')}
           role="columnheader"
           aria-sort={sortConfig?.key === 'devices' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
@@ -89,7 +98,7 @@ const UserTableHeader: React.FC<UserTableHeaderProps> = ({
           </div>
         </th>
         <th 
-          className={`table-sortable ${sortConfig?.key === 'createdAt' ? 'active' : ''}`}
+          className={`table-sortable table-date-column ${sortConfig?.key === 'createdAt' ? 'active' : ''}`}
           onClick={() => onSort('createdAt')}
           role="columnheader"
           aria-sort={sortConfig?.key === 'createdAt' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
@@ -102,6 +111,7 @@ const UserTableHeader: React.FC<UserTableHeaderProps> = ({
         </th>
         <th className="table-actions-column">
           <div className="table-header-actions">
+            <Settings size={14} />
             <span>Ações</span>
           </div>
         </th>

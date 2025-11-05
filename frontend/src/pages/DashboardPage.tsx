@@ -9,13 +9,10 @@ import {
   Activity,
   AlertTriangle,
   Timer,
-  Settings,
-  LineChart,
   Database,
-  CircleDot
+  CircleDot,
+  LineChart
 } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
 import { useToast } from '../hooks/useToast';
 import StatsCard from '../components/dashboard/StatsCard';
 import Sidebar from '../components/dashboard/Sidebar';
@@ -28,8 +25,6 @@ import LoadingOverlay from '../components/ui/LoadingOverlay';
 import '../styles/components/Dashboard.css';
 
 const DashboardPage: React.FC = () => {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
   const { toasts, removeToast } = useToast();
   
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -58,15 +53,6 @@ const DashboardPage: React.FC = () => {
       setStats(null);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-      navigate('/login');
-    } catch (error) {
-      console.error('Erro ao fazer logout:', error);
     }
   };
 
@@ -215,16 +201,13 @@ const DashboardPage: React.FC = () => {
                     data: [1250, 1380, 1190, 1420, 1560, 1680, 1450],
                     backgroundColor: 'rgba(139, 92, 246, 0.6)',
                     borderColor: 'rgba(139, 92, 246, 0.8)',
-                    borderWidth: 2,
-                    borderRadius: 8
+                    borderWidth: 2
                   }, {
                     label: 'Leituras Realizadas',
                     data: [45, 52, 48, 55, 58, 62, 50],
                     backgroundColor: 'rgba(59, 130, 246, 0.6)',
                     borderColor: 'rgba(59, 130, 246, 0.8)',
-                    borderWidth: 2,
-                    borderRadius: 8,
-                    yAxisID: 'y1'
+                    borderWidth: 2
                   }]
                 }}
                 title=""

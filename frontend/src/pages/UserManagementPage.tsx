@@ -1,13 +1,11 @@
 import React from 'react';
 import { LayoutDashboard, ChevronRight, UserCog } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
 import UserManager from '../components/dashboard/UserManager/UserManager';
 import LoginParticles from '../components/ui/LoginParticles';
 import Sidebar from '../components/dashboard/Sidebar';
 import '../styles/components/Dashboard.css';
 
 const UserManagementPage: React.FC = () => {
-  const { user } = useAuth();
   const [sidebarVisible, setSidebarVisible] = React.useState(false);
 
   return (

@@ -21,6 +21,7 @@ export const useUserManager = () => {
   const [openActionMenu, setOpenActionMenu] = useState<number | null>(null);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+  const [deleteConfirm, setDeleteConfirm] = useState<{ userId: number | null; isBulk: boolean }>({ userId: null, isBulk: false });
   const [newUser, setNewUser] = useState<NewUserForm>({ 
     email: '', 
     password: '', 
@@ -96,6 +97,7 @@ export const useUserManager = () => {
     if (form && form.email) {
       try {
         // Aqui você pode chamar uma API para salvar
+        // await dashboardService.updateUser(userId, form);
         setUsers(users.map(user => 
           user.id === userId 
             ? { ...user, email: form.email, password: form.password || user.password }
@@ -116,7 +118,12 @@ export const useUserManager = () => {
   };
 
   const handleDeleteUser = async (userId: number) => {
-    if (window.confirm('Tem certeza que deseja excluir este usuário? Esta ação não pode ser desfeita.')) {
+    setDeleteConfirm({ userId, isBulk: false });
+  };
+
+  const confirmDeleteUser = async () => {
+    const userId = deleteConfirm.userId;
+    if (userId !== null) {
       try {
         // Aqui você pode chamar uma API para deletar
         setUsers(users.filter(user => user.id !== userId));
@@ -127,6 +134,11 @@ export const useUserManager = () => {
         console.error('Erro ao deletar usuário:', error);
       }
     }
+    setDeleteConfirm({ userId: null, isBulk: false });
+  };
+
+  const cancelDeleteUser = () => {
+    setDeleteConfirm({ userId: null, isBulk: false });
   };
 
   const handleAddUser = async () => {
@@ -250,10 +262,13 @@ export const useUserManager = () => {
   };
 
   const handleBulkDelete = () => {
-    if (window.confirm(`Tem certeza que deseja excluir ${selectedUsers.length} usuário(s)?`)) {
-      setUsers(users.filter(user => !selectedUsers.includes(user.id)));
-      setSelectedUsers([]);
-    }
+    setDeleteConfirm({ userId: null, isBulk: true });
+  };
+
+  const confirmBulkDelete = () => {
+    setUsers(users.filter(user => !selectedUsers.includes(user.id)));
+    setSelectedUsers([]);
+    setDeleteConfirm({ userId: null, isBulk: false });
   };
 
   const handleExport = (format: 'csv' | 'json') => {
@@ -330,6 +345,7 @@ export const useUserManager = () => {
     paginatedUsers,
     regularUsers,
     selectedUser,
+    deleteConfirm,
     // Handlers
     loadUsersData,
     togglePasswordVisibility,
@@ -337,6 +353,8 @@ export const useUserManager = () => {
     handleSaveUser,
     handleCancelEdit,
     handleDeleteUser,
+    confirmDeleteUser,
+    cancelDeleteUser,
     handleAddUser,
     handleAssociateMeter,
     handleDisassociateMeter,
@@ -344,6 +362,7 @@ export const useUserManager = () => {
     handleSelectUser,
     handleSelectAll,
     handleBulkDelete,
+    confirmBulkDelete,
     handleExport,
     toggleRowExpand,
     // Setters

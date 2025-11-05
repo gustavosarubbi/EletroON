@@ -20,8 +20,7 @@ const StatsCard: React.FC<StatsCardProps> = ({
   icon: Icon,
   color,
   trend,
-  subtitle,
-  percentage
+  subtitle
 }) => {
   return (
     <div className={`stats-card ${color}`}>

@@ -6,6 +6,8 @@ import UserToolbar from './UserToolbar';
 import AddUserForm from './AddUserForm';
 import MeterManagement from './MeterManagement';
 import MetersModal from './MetersModal';
+import EditUserModal from './EditUserModal';
+import DeleteConfirmModal from './DeleteConfirmModal';
 import UserTable from './components/UserTable';
 import UserGridView from './components/UserGridView';
 import LoadingState from './components/LoadingState';
@@ -36,12 +38,15 @@ const UserManager: React.FC = () => {
     newUser,
     editData,
     openActionMenu,
+    deleteConfirm,
     // Handlers
     loadUsersData,
     handleEditUser,
     handleSaveUser,
     handleCancelEdit,
     handleDeleteUser,
+    confirmDeleteUser,
+    cancelDeleteUser,
     handleAddUser,
     handleAssociateMeter,
     handleDisassociateMeter,
@@ -49,13 +54,13 @@ const UserManager: React.FC = () => {
     handleSelectUser,
     handleSelectAll,
     handleBulkDelete,
+    confirmBulkDelete,
     handleExport,
     togglePasswordVisibility,
     // Setters
     setShowAddForm,
     setShowMeterManagement,
     setSelectedUserId,
-    setEditingUserId,
     setSearchQuery,
     setFilterRole,
     setViewMode,
@@ -187,6 +192,50 @@ const UserManager: React.FC = () => {
         <MetersModal
           user={selectedUser}
           onClose={() => setSelectedUserId(null)}
+        />
+      )}
+
+      {/* Modal de Edição de Usuário */}
+      {editingUserId && (() => {
+        const userToEdit = users.find(u => u.id === editingUserId);
+        return userToEdit ? (
+          <EditUserModal
+            user={userToEdit}
+            onSave={async (data) => {
+              handleEditChange(editingUserId, data);
+              await handleSaveUser(editingUserId);
+            }}
+            onClose={handleCancelEdit}
+          />
+        ) : null;
+      })()}
+
+      {/* Modal de Confirmação de Exclusão */}
+      {deleteConfirm.userId !== null && (
+        (() => {
+          const userToDelete = users.find(u => u.id === deleteConfirm.userId);
+          return userToDelete ? (
+            <DeleteConfirmModal
+              isOpen={true}
+              title="Excluir Usuário"
+              message={`Tem certeza que deseja excluir o usuário "${userToDelete.email}"?`}
+              onConfirm={confirmDeleteUser}
+              onCancel={cancelDeleteUser}
+              isBulk={false}
+            />
+          ) : null;
+        })()
+      )}
+
+      {deleteConfirm.isBulk && selectedUsers.length > 0 && (
+        <DeleteConfirmModal
+          isOpen={true}
+          title="Excluir Usuários"
+          message={`Tem certeza que deseja excluir ${selectedUsers.length} usuário(s) selecionado(s)?`}
+          onConfirm={confirmBulkDelete}
+          onCancel={cancelDeleteUser}
+          isBulk={true}
+          count={selectedUsers.length}
         />
       )}
     </div>

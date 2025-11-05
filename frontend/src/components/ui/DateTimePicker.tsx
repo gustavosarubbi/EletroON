@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { Calendar, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import '../../styles/components/DateTimePicker.css';
 
@@ -11,9 +11,68 @@ interface DateTimePickerProps {
 const DateTimePicker: React.FC<DateTimePickerProps> = ({ value, onChange, placeholder }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState<Date | null>(value ? new Date(value) : null);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState({ hour: 0, minute: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  const adjustModalPosition = () => {
+    if (!modalRef.current || !containerRef.current) return;
+    
+    const modal = modalRef.current;
+    const container = containerRef.current;
+    const rect = container.getBoundingClientRect();
+    const modalRect = modal.getBoundingClientRect();
+    
+    // Resetar estilos inline primeiro
+    modal.style.left = '';
+    modal.style.right = '';
+    modal.style.top = '';
+    modal.style.bottom = '';
+    
+    // Verificar se o modal sai da tela à direita
+    if (rect.left + modalRect.width > window.innerWidth - 16) {
+      modal.style.left = 'auto';
+      modal.style.right = '0';
+    } else {
+      modal.style.left = '0';
+      modal.style.right = 'auto';
+    }
+    
+    // Verificar se o modal sai da tela abaixo
+    if (rect.bottom + modalRect.height > window.innerHeight - 16) {
+      modal.style.top = 'auto';
+      modal.style.bottom = 'calc(100% + 8px)';
+    } else {
+      modal.style.top = 'calc(100% + 8px)';
+      modal.style.bottom = 'auto';
+    }
+  };
+
+  // Inicializar com valor se existir
+  useEffect(() => {
+    if (value) {
+      try {
+        const date = new Date(value);
+        if (!isNaN(date.getTime())) {
+          setSelectedDate(date);
+          setSelectedTime({ hour: date.getHours(), minute: date.getMinutes() });
+          setCurrentMonth(date);
+        }
+      } catch (error) {
+        console.error('Erro ao parsear data:', error);
+      }
+    } else {
+      setSelectedDate(null);
+      setSelectedTime({ hour: 0, minute: 0 });
+    }
+  }, [value]);
+
+  useLayoutEffect(() => {
+    if (isOpen && modalRef.current && containerRef.current) {
+      adjustModalPosition();
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -22,64 +81,88 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({ value, onChange, placeh
       }
     };
 
+    const handleResize = () => {
+      if (isOpen) {
+        adjustModalPosition();
+      }
+    };
+
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
+      window.addEventListener('resize', handleResize);
+      // Ajustar posicionamento após um pequeno delay para garantir que o modal foi renderizado
+      setTimeout(adjustModalPosition, 0);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('resize', handleResize);
     };
   }, [isOpen]);
 
-  useEffect(() => {
-    if (value) {
-      const date = new Date(value);
-      setSelectedDate(date);
-      setSelectedTime({ hour: date.getHours(), minute: date.getMinutes() });
-    }
-  }, [value]);
-
-  const formatDate = (date: Date): string => {
+  const formatDate = (date: Date, hour: number, minute: number): string => {
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const year = date.getFullYear();
-    const hours = String(selectedTime.hour).padStart(2, '0');
-    const minutes = String(selectedTime.minute).padStart(2, '0');
+    const hours = String(hour).padStart(2, '0');
+    const minutes = String(minute).padStart(2, '0');
     return `${year}-${month}-${day}T${hours}:${minutes}`;
   };
 
   const handleDateSelect = (day: number) => {
+    // Criar nova data garantindo que não há referência compartilhada
     const newDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
-    setSelectedDate(newDate);
-    updateDateTime(newDate, selectedTime.hour, selectedTime.minute);
+    // Criar uma nova instância para evitar problemas de referência
+    const dateCopy = new Date(newDate.getTime());
+    setSelectedDate(dateCopy);
+    // Atualizar imediatamente com a hora atual
+    updateDateTime(dateCopy, selectedTime.hour, selectedTime.minute);
   };
 
-  const handleTimeSelect = (type: 'hour' | 'minute', value: number) => {
-    const newTime = { ...selectedTime, [type]: value };
+  const handleTimeChange = (type: 'hour' | 'minute', newValue: number) => {
+    // Validar valores
+    if (type === 'hour') {
+      newValue = Math.max(0, Math.min(23, newValue));
+    } else {
+      newValue = Math.max(0, Math.min(59, newValue));
+    }
+
+    const newTime = { ...selectedTime, [type]: newValue };
     setSelectedTime(newTime);
+
+    // Se já tem data selecionada, atualizar automaticamente
     if (selectedDate) {
       updateDateTime(selectedDate, newTime.hour, newTime.minute);
     }
   };
 
   const updateDateTime = (date: Date, hour: number, minute: number) => {
-    const newDateTime = new Date(date);
-    newDateTime.setHours(hour, minute, 0, 0);
-    onChange(formatDate(newDateTime));
+    const formatted = formatDate(date, hour, minute);
+    onChange(formatted);
   };
 
   const handleToday = () => {
     const today = new Date();
     setSelectedDate(today);
     setCurrentMonth(today);
-    setSelectedTime({ hour: today.getHours(), minute: today.getMinutes() });
-    onChange(formatDate(today));
+    const newTime = { hour: today.getHours(), minute: today.getMinutes() };
+    setSelectedTime(newTime);
+    updateDateTime(today, newTime.hour, newTime.minute);
+    setIsOpen(false);
   };
 
   const handleClear = () => {
     setSelectedDate(null);
     setSelectedTime({ hour: 0, minute: 0 });
     onChange('');
+    setIsOpen(false);
+  };
+
+  const handleConfirm = () => {
+    if (selectedDate) {
+      updateDateTime(selectedDate, selectedTime.hour, selectedTime.minute);
+      setIsOpen(false);
+    }
   };
 
   const getDaysInMonth = (date: Date) => {
@@ -124,6 +207,31 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({ value, onChange, placeh
     });
   };
 
+  const handleMonthChange = (monthIndex: number) => {
+    setCurrentMonth(prev => {
+      const newMonth = new Date(prev);
+      newMonth.setMonth(monthIndex);
+      return newMonth;
+    });
+  };
+
+  const handleYearChange = (year: number) => {
+    setCurrentMonth(prev => {
+      const newMonth = new Date(prev);
+      newMonth.setFullYear(year);
+      return newMonth;
+    });
+  };
+
+  const getYearOptions = () => {
+    const currentYear = new Date().getFullYear();
+    const years = [];
+    for (let i = currentYear - 10; i <= currentYear + 10; i++) {
+      years.push(i);
+    }
+    return years;
+  };
+
   const isToday = (day: number) => {
     const today = new Date();
     return (
@@ -135,16 +243,15 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({ value, onChange, placeh
 
   const isSelected = (day: number) => {
     if (!selectedDate) return false;
-    return (
-      day === selectedDate.getDate() &&
-      currentMonth.getMonth() === selectedDate.getMonth() &&
-      currentMonth.getFullYear() === selectedDate.getFullYear()
-    );
+    const dayDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+    const selectedDateOnly = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+    const dayDateOnly = new Date(dayDate.getFullYear(), dayDate.getMonth(), dayDate.getDate());
+    return dayDateOnly.getTime() === selectedDateOnly.getTime();
   };
 
   const displayValue = value && selectedDate
-    ? `${String(selectedDate.getDate()).padStart(2, '0')} / ${String(selectedDate.getMonth() + 1).padStart(2, '0')} / ${selectedDate.getFullYear()} ${String(selectedTime.hour).padStart(2, '0')} : ${String(selectedTime.minute).padStart(2, '0')}`
-    : placeholder || 'dd / mm / aaaa -- : --';
+    ? `${String(selectedDate.getDate()).padStart(2, '0')} / ${String(selectedDate.getMonth() + 1).padStart(2, '0')} / ${selectedDate.getFullYear()} ${String(selectedTime.hour).padStart(2, '0')}:${String(selectedTime.minute).padStart(2, '0')}`
+    : placeholder || 'dd / mm / aaaa --:--';
 
   return (
     <div className="datetime-picker-container" ref={containerRef}>
@@ -159,7 +266,7 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({ value, onChange, placeh
       </div>
 
       {isOpen && (
-        <div className="datetime-picker-modal">
+        <div className="datetime-picker-modal" ref={modalRef}>
           <div className="datetime-picker-content">
             {/* Calendário */}
             <div className="datetime-picker-calendar">
@@ -168,16 +275,35 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({ value, onChange, placeh
                   className="calendar-nav-btn"
                   onClick={() => navigateMonth('prev')}
                   type="button"
+                  title="Mês anterior"
                 >
                   <ChevronLeft size={16} />
                 </button>
-                <span className="calendar-month-year">
-                  {months[currentMonth.getMonth()]} de {currentMonth.getFullYear()}
-                </span>
+                <div className="calendar-month-year-selectors">
+                  <select 
+                    className="calendar-month-select"
+                    value={currentMonth.getMonth()}
+                    onChange={(e) => handleMonthChange(Number(e.target.value))}
+                  >
+                    {months.map((month, index) => (
+                      <option key={index} value={index}>{month}</option>
+                    ))}
+                  </select>
+                  <select 
+                    className="calendar-year-select"
+                    value={currentMonth.getFullYear()}
+                    onChange={(e) => handleYearChange(Number(e.target.value))}
+                  >
+                    {getYearOptions().map(year => (
+                      <option key={year} value={year}>{year}</option>
+                    ))}
+                  </select>
+                </div>
                 <button 
                   className="calendar-nav-btn"
                   onClick={() => navigateMonth('next')}
                   type="button"
+                  title="Próximo mês"
                 >
                   <ChevronRight size={16} />
                 </button>
@@ -207,52 +333,55 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({ value, onChange, placeh
                 })}
               </div>
 
+              {/* Seletor de Hora */}
+              <div className="datetime-picker-time-section">
+                <div className="time-label">
+                  <Clock size={14} />
+                  Hora
+                </div>
+                <div className="time-inputs">
+                  <div className="time-input-group">
+                    <label>Hora</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="23"
+                      value={selectedTime.hour}
+                      onChange={(e) => handleTimeChange('hour', parseInt(e.target.value) || 0)}
+                      className="time-input"
+                    />
+                  </div>
+                  <div className="time-separator">:</div>
+                  <div className="time-input-group">
+                    <label>Minuto</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="59"
+                      value={selectedTime.minute}
+                      onChange={(e) => handleTimeChange('minute', parseInt(e.target.value) || 0)}
+                      className="time-input"
+                    />
+                  </div>
+                </div>
+              </div>
+
               <div className="calendar-footer">
                 <button className="calendar-action-btn" onClick={handleClear} type="button">
                   Limpar
                 </button>
-                <button className="calendar-action-btn" onClick={handleToday} type="button">
-                  Hoje
-                </button>
-              </div>
-            </div>
-
-            {/* Seletor de Hora */}
-            <div className="datetime-picker-time">
-              <div className="time-label">
-                <Clock size={16} />
-                Hora
-              </div>
-              <div className="time-selectors">
-                <div className="time-column">
-                  <div className="time-value selected">{String(selectedTime.hour).padStart(2, '0')}</div>
-                  <div className="time-scroll">
-                    {Array.from({ length: 24 }, (_, i) => (
-                      <button
-                        key={i}
-                        className={`time-option ${selectedTime.hour === i ? 'active' : ''}`}
-                        onClick={() => handleTimeSelect('hour', i)}
-                        type="button"
-                      >
-                        {String(i).padStart(2, '0')}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="time-column">
-                  <div className="time-value selected">{String(selectedTime.minute).padStart(2, '0')}</div>
-                  <div className="time-scroll">
-                    {Array.from({ length: 60 }, (_, i) => (
-                      <button
-                        key={i}
-                        className={`time-option ${selectedTime.minute === i ? 'active' : ''}`}
-                        onClick={() => handleTimeSelect('minute', i)}
-                        type="button"
-                      >
-                        {String(i).padStart(2, '0')}
-                      </button>
-                    ))}
-                  </div>
+                <div className="calendar-footer-right">
+                  <button className="calendar-action-btn" onClick={handleToday} type="button">
+                    Hoje
+                  </button>
+                  <button 
+                    className="calendar-action-btn confirm-btn" 
+                    onClick={handleConfirm} 
+                    type="button"
+                    disabled={!selectedDate}
+                  >
+                    Confirmar
+                  </button>
                 </div>
               </div>
             </div>
@@ -264,4 +393,3 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({ value, onChange, placeh
 };
 
 export default DateTimePicker;
-

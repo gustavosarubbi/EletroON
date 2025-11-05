@@ -86,8 +86,6 @@ const UserManager: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(12);
   const [openActionMenu, setOpenActionMenu] = useState<number | null>(null);
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
   
   const [newUser, setNewUser] = useState<NewUserForm>({ 
     email: '', 
@@ -409,18 +407,6 @@ const UserManager: React.FC = () => {
     </thead>
   );
 
-  // Toggle expandir linha
-  const toggleRowExpand = (userId: number) => {
-    setExpandedRows(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(userId)) {
-        newSet.delete(userId);
-      } else {
-        newSet.add(userId);
-      }
-      return newSet;
-    });
-  };
 
   // Renderizar linha da tabela
   const renderTableRow = (user: UserData) => {

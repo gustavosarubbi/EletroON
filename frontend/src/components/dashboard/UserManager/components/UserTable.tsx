@@ -14,7 +14,6 @@ interface UserTableProps {
   totalItems: number;
   editingUserId: number | null;
   showPasswords: { [key: number]: boolean };
-  openActionMenu: number | null;
   editData: { [key: number]: { email: string; password: string } };
   onSort: (key: SortKey) => void;
   onSelectAll: () => void;
@@ -24,10 +23,8 @@ interface UserTableProps {
   onCancelEdit: () => void;
   onDeleteUser: (userId: number) => void;
   onTogglePassword: (userId: number) => void;
-  onViewMeters: (userId: number) => void;
   onEditChange: (userId: number, data: { email: string; password: string }) => void;
   onPageChange: (page: number) => void;
-  onOpenActionMenu: (userId: number | null) => void;
 }
 
 const UserTable: React.FC<UserTableProps> = ({
@@ -39,7 +36,6 @@ const UserTable: React.FC<UserTableProps> = ({
   totalItems,
   editingUserId,
   showPasswords,
-  openActionMenu,
   editData,
   onSort,
   onSelectAll,
@@ -49,10 +45,8 @@ const UserTable: React.FC<UserTableProps> = ({
   onCancelEdit,
   onDeleteUser,
   onTogglePassword,
-  onViewMeters,
   onEditChange,
   onPageChange,
-  onOpenActionMenu,
 }) => {
   return (
     <div className="table-container-modern">
@@ -73,22 +67,15 @@ const UserTable: React.FC<UserTableProps> = ({
                 isSelected={selectedUsers.includes(user.id)}
                 isEditing={editingUserId === user.id}
                 showPassword={showPasswords[user.id] || false}
-                openActionMenu={openActionMenu === user.id}
-                editData={editData[user.id]}
                 onSelect={() => onSelectUser(user.id)}
                 onEdit={() => onEditUser(user.id)}
-                onSave={() => onSaveUser(user.id)}
-                onCancel={onCancelEdit}
                 onDelete={() => onDeleteUser(user.id)}
                 onTogglePassword={() => onTogglePassword(user.id)}
-                onViewMeters={() => onViewMeters(user.id)}
-                onEditChange={(data) => onEditChange(user.id, data)}
-                onOpenActionMenu={() => onOpenActionMenu(openActionMenu === user.id ? null : user.id)}
               />
             ))
           ) : (
             <tr>
-              <td colSpan={6} className="table-empty">
+              <td colSpan={7} className="table-empty">
                 <div className="empty-state">
                   <Search size={64} />
                   <h4>Nenhum usuário encontrado</h4>

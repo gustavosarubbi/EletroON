@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Search,
   SlidersHorizontal,
@@ -45,6 +46,63 @@ const UserToolbar: React.FC<UserToolbarProps> = ({
   onAddUser,
   onManageMeters,
 }) => {
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; right: number } | null>(null);
+  const exportMenuRef = useRef<HTMLDivElement>(null);
+  const exportButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        exportMenuRef.current &&
+        exportButtonRef.current &&
+        !exportMenuRef.current.contains(event.target as Node) &&
+        !exportButtonRef.current.contains(event.target as Node)
+      ) {
+        setShowExportMenu(false);
+      }
+    };
+
+    if (showExportMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [showExportMenu]);
+
+  useEffect(() => {
+    const updateDropdownPosition = () => {
+      if (showExportMenu && exportButtonRef.current) {
+        const buttonRect = exportButtonRef.current.getBoundingClientRect();
+        
+        // Para position: fixed, usamos valores relativos à viewport
+        const top = buttonRect.bottom + 8;
+        const right = window.innerWidth - buttonRect.right;
+        
+        setDropdownPosition({ top, right });
+      } else {
+        setDropdownPosition(null);
+      }
+    };
+
+    if (showExportMenu) {
+      // Pequeno delay para garantir que o DOM está atualizado
+      const timeoutId = setTimeout(updateDropdownPosition, 10);
+      
+      window.addEventListener('scroll', updateDropdownPosition, true);
+      window.addEventListener('resize', updateDropdownPosition);
+      
+      return () => {
+        clearTimeout(timeoutId);
+        window.removeEventListener('scroll', updateDropdownPosition, true);
+        window.removeEventListener('resize', updateDropdownPosition);
+      };
+    } else {
+      setDropdownPosition(null);
+    }
+  }, [showExportMenu]);
+
   return (
     <div className="toolbar-modern">
       <div className="toolbar-left">
@@ -110,22 +168,39 @@ const UserToolbar: React.FC<UserToolbarProps> = ({
         </div>
 
         <div className="export-menu">
-          <button className="toolbar-btn secondary">
+          <button 
+            ref={exportButtonRef}
+            className="toolbar-btn secondary"
+            onClick={() => setShowExportMenu(!showExportMenu)}
+          >
             <Download size={18} />
             <span>Exportar</span>
             <ChevronDown size={16} />
           </button>
-          <div className="export-dropdown">
-            <button className="export-option" onClick={() => onExport('csv')}>
+        </div>
+
+        {showExportMenu && dropdownPosition && createPortal(
+          <div 
+            ref={exportMenuRef}
+            className="export-dropdown export-dropdown-portal"
+            style={{
+              position: 'fixed',
+              top: `${dropdownPosition.top}px`,
+              right: `${dropdownPosition.right}px`,
+              zIndex: 10001,
+            }}
+          >
+            <button className="export-option" onClick={() => { onExport('csv'); setShowExportMenu(false); }}>
               <FileText size={16} />
               <span>Exportar como CSV</span>
             </button>
-            <button className="export-option" onClick={() => onExport('json')}>
+            <button className="export-option" onClick={() => { onExport('json'); setShowExportMenu(false); }}>
               <FileText size={16} />
               <span>Exportar como JSON</span>
             </button>
-          </div>
-        </div>
+          </div>,
+          document.body
+        )}
 
         <button
           className="toolbar-btn secondary"

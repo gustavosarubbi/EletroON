@@ -1,12 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useAuth } from '../contexts/AuthContext';
 import LoginParticles from '../components/ui/LoginParticles';
 import Sidebar from '../components/dashboard/Sidebar';
 import Chart from '../components/dashboard/Chart';
 import { dashboardService } from '../services/dashboardService';
 import { Device, Reading } from '../types/dashboard';
 import {
-  LineChart,
   Zap,
   TrendingUp,
   Calendar,
@@ -24,13 +22,11 @@ import {
   Download,
   CheckSquare,
   Square,
-  X,
   Building2,
-  ChevronDown,
-  Filter,
   LayoutDashboard,
   ChevronRight,
-  BarChart3
+  FileText,
+  FileJson
 } from 'lucide-react';
 import '../styles/components/RoomCharts.css';
 import '../styles/components/Dashboard.css';
@@ -51,7 +47,6 @@ interface AggregatedData {
 }
 
 const RoomChartsPage: React.FC = () => {
-  const { user } = useAuth();
   const [sidebarVisible, setSidebarVisible] = useState(false);
   
   // Estados principais
@@ -356,18 +351,6 @@ const RoomChartsPage: React.FC = () => {
     }
   };
 
-  const formatDate = (date: Date | string | undefined): string => {
-    if (!date) return 'Nunca';
-    const d = typeof date === 'string' ? new Date(date) : date;
-    return d.toLocaleString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
   const formatDateShort = (date: Date | string | undefined): string => {
     if (!date) return '';
     const d = typeof date === 'string' ? new Date(date) : date;
@@ -494,13 +477,12 @@ const RoomChartsPage: React.FC = () => {
     );
   };
 
-  const selectedDevices = devices.filter(d => selectedDeviceIds.includes(d.meterId));
-
   return (
-    <div className="room-charts-page-container">
+    <div className="dashboard-page-container">
+      {/* Partículas animadas de fundo */}
       <LoginParticles />
-      
-      {/* Botão de Menu */}
+
+      {/* Botão de Menu - Visível apenas quando sidebar está fechado */}
       {!sidebarVisible && (
         <button 
           className="dashboard-menu-toggle"
@@ -516,78 +498,74 @@ const RoomChartsPage: React.FC = () => {
         </button>
       )}
       
+      {/* Título com Breadcrumb */}
+      <div className="dashboard-title-section">
+        <div className="dashboard-title-header">
+          <div className="dashboard-breadcrumb">
+            <LayoutDashboard size={18} />
+            <span>Dashboard</span>
+            <ChevronRight size={18} />
+            <span className="breadcrumb-active">Gráficos das Salas</span>
+          </div>
+        </div>
+        <h1 className="dashboard-main-title">Gráficos das Salas</h1>
+        <p className="dashboard-subtitle">Visualize métricas detalhadas de consumo e desempenho energético</p>
+      </div>
+
+      {/* Sidebar */}
       <Sidebar 
         isVisible={sidebarVisible}
         onClose={() => setSidebarVisible(false)}
       />
 
-      <div className="room-charts-content">
-        {/* Título com Breadcrumb */}
-        <div className="dashboard-title-section">
-          <div className="dashboard-title-header">
-            <div className="dashboard-breadcrumb">
-              <LayoutDashboard size={18} />
-              <span>Dashboard</span>
-              <ChevronRight size={18} />
-              <span className="breadcrumb-active">Gráficos das Salas</span>
-            </div>
-          </div>
-          <h1 className="dashboard-main-title">Gráficos das Salas</h1>
-          <p className="dashboard-subtitle">Visualize métricas detalhadas de consumo e desempenho energético</p>
-        </div>
+      {/* Main Content */}
+      <div className="dashboard-page-content">
+        {/* Controles Principais - Reorganizados com melhor UX */}
+        <div className="room-controls-container">
+          {/* Seção: Seleção de Salas e Medidores */}
+          <div className="controls-section selection-section">
+            <h2 className="section-title-enhanced">
+              <Building2 size={20} />
+              Salas e Medidores
+            </h2>
+            
+            <div className="control-card unified-selection-card">
+              <div className="unified-selection-header">
+                <div className="selection-controls-row">
+                  <div className="room-select-wrapper">
+                    <label className="selection-label">
+                      <Building2 size={16} />
+                      Sala
+                    </label>
+                    <select
+                      className="room-select-unified"
+                      value={selectedRoom}
+                      onChange={(e) => setSelectedRoom(e.target.value)}
+                      disabled={loading}
+                    >
+                      <option value="all">Todas as Salas</option>
+                      {roomsList.map(room => (
+                        <option key={room} value={room}>
+                          {room} ({roomsMap.get(room)?.length || 0} medidores)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  {selectedDeviceIds.length > 0 && (
+                    <div className="selection-summary">
+                      <span className="selection-summary-text">
+                        {selectedDeviceIds.length} medidor{selectedDeviceIds.length > 1 ? 'es' : ''} selecionado{selectedDeviceIds.length > 1 ? 's' : ''}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
 
-        {/* Header com Ações */}
-        <div className="room-charts-header">
-          <div className="header-actions">
-            <button
-              className="action-btn refresh"
-              onClick={loadReadings}
-              disabled={loadingReadings || selectedDeviceIds.length === 0}
-              title="Atualizar dados"
-            >
-              <RefreshCw size={18} className={loadingReadings ? 'spinning' : ''} />
-              Atualizar
-            </button>
-          </div>
-        </div>
-
-        {/* Toolbar de Seleção */}
-        <div className="selection-toolbar">
-          {/* Seleção de Sala */}
-          <div className="toolbar-section room-selection">
-            <label className="toolbar-label">
-              <Building2 size={18} />
-              Selecionar Sala
-            </label>
-            <select
-              className="room-select"
-              value={selectedRoom}
-              onChange={(e) => setSelectedRoom(e.target.value)}
-              disabled={loading}
-            >
-              <option value="all">Todas as Salas</option>
-              {roomsList.map(room => (
-                <option key={room} value={room}>
-                  {room} ({roomsMap.get(room)?.length || 0} medidores)
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Seleção de Medidores */}
-          {selectedRoom && (
-            <div className="toolbar-section device-selection">
-              <label className="toolbar-label">
-                <Database size={18} />
-                Medidores {selectedRoom !== 'all' && `da Sala`}
-                {selectedDeviceIds.length > 0 && (
-                  <span className="selection-count">({selectedDeviceIds.length} selecionados)</span>
-                )}
-              </label>
-              <div className="device-list-container">
-                <div className="device-list-header">
+              <div className="devices-list-wrapper">
+                <div className="devices-list-header">
                   <button
-                    className="select-all-devices-btn"
+                    className="devices-select-all-btn"
                     onClick={handleSelectAllDevices}
                     disabled={devicesByRoom.length === 0}
                   >
@@ -604,29 +582,29 @@ const RoomChartsPage: React.FC = () => {
                     )}
                   </button>
                 </div>
-                <div className="device-list">
+                <div className="devices-list-scroll">
                   {devicesByRoom.length === 0 ? (
-                    <div className="no-devices">
+                    <div className="devices-empty-state">
                       <Database size={32} />
                       <p>Nenhum medidor encontrado</p>
                     </div>
                   ) : (
                     devicesByRoom.map(device => (
-                      <label key={device.meterId} className="device-item">
+                      <label key={device.meterId} className="device-checkbox-item">
                         <input
                           type="checkbox"
                           checked={selectedDeviceIds.includes(device.meterId)}
                           onChange={() => handleDeviceToggle(device.meterId)}
                           disabled={loading}
                         />
-                        <div className="device-item-info">
-                          <span className="device-item-name">{device.name}</span>
-                          <div className="device-item-meta">
-                            <span className={`device-item-status ${device.status === 'ONLINE' ? 'online' : 'offline'}`}>
+                        <div className="device-checkbox-content">
+                          <span className="device-checkbox-name">{device.name}</span>
+                          <div className="device-checkbox-meta">
+                            <span className={`device-status-badge-item ${device.status === 'ONLINE' ? 'online' : 'offline'}`}>
                               {device.status === 'ONLINE' ? <Wifi size={12} /> : <WifiOff size={12} />}
                               {device.status}
                             </span>
-                            <span className="device-item-id">ID: {device.meterId}</span>
+                            <span className="device-id-label">ID: {device.meterId}</span>
                           </div>
                         </div>
                       </label>
@@ -635,75 +613,97 @@ const RoomChartsPage: React.FC = () => {
                 </div>
               </div>
             </div>
-          )}
-        </div>
-
-        {/* Filtros de Período e Exportação */}
-        <div className="filters-toolbar">
-          <div className="filters-section time-filters">
-            <label className="toolbar-label">
-              <Calendar size={18} />
-              Período
-            </label>
-            <div className="time-range-buttons">
-              {(['1h', '24h', '7d', '30d'] as const).map(range => (
-                <button
-                  key={range}
-                  className={`time-range-btn ${timeRange === range ? 'active' : ''}`}
-                  onClick={() => setTimeRange(range)}
-                >
-                  {range === '1h' ? '1 hora' : range === '24h' ? '24 horas' : range === '7d' ? '7 dias' : '30 dias'}
-                </button>
-              ))}
-              <button
-                className={`time-range-btn ${timeRange === 'custom' ? 'active' : ''}`}
-                onClick={() => setTimeRange('custom')}
-              >
-                <Clock size={16} />
-                Personalizado
-              </button>
-            </div>
-            
-            <div className={`custom-date-inputs ${timeRange !== 'custom' ? 'hidden' : ''}`}>
-              <DateTimePicker
-                value={customStartDate}
-                onChange={(value) => setCustomStartDate(value)}
-                placeholder="Data inicial"
-              />
-              <div className="date-divider"></div>
-              <DateTimePicker
-                value={customEndDate}
-                onChange={(value) => setCustomEndDate(value)}
-                placeholder="Data final"
-              />
-            </div>
           </div>
 
-          <div className="filters-section export-section">
-            <div className="export-section-content">
-              <label className="toolbar-label">
-                <Download size={18} />
-                Exportar Relatório
-              </label>
-              <div className="export-buttons">
-                <button
-                  className="export-btn csv"
-                  onClick={() => handleExportReport('csv')}
-                  disabled={exporting || selectedDeviceIds.length === 0}
-                  title="Exportar como CSV"
-                >
+          {/* Seção: Período e Exportação */}
+          <div className="controls-section filters-section">
+            <h2 className="section-title-enhanced">
+              <Calendar size={20} />
+              Período e Exportação
+            </h2>
+            
+            <div className="controls-grid">
+              {/* Card: Período */}
+              <div className="control-card period-card">
+                <label className="control-card-label">
+                  <Clock size={16} />
+                  Período de Análise
+                </label>
+                <div className="period-buttons-row">
+                  {(['1h', '24h', '7d', '30d'] as const).map(range => {
+                    const icons = {
+                      '1h': Clock,
+                      '24h': Clock,
+                      '7d': Calendar,
+                      '30d': Calendar
+                    };
+                    const Icon = icons[range];
+                    return (
+                      <button
+                        key={range}
+                        className={`period-btn ${timeRange === range ? 'active' : ''}`}
+                        onClick={() => setTimeRange(range)}
+                      >
+                        <Icon size={14} />
+                        {range === '1h' ? '1 hora' : range === '24h' ? '24 horas' : range === '7d' ? '7 dias' : '30 dias'}
+                      </button>
+                    );
+                  })}
+                  <button
+                    className={`period-btn custom ${timeRange === 'custom' ? 'active' : ''}`}
+                    onClick={() => setTimeRange('custom')}
+                  >
+                    <Clock size={14} />
+                    Personalizado
+                  </button>
+                </div>
+                
+                <div className={`period-custom-inputs ${timeRange !== 'custom' ? 'hidden' : ''}`}>
+                  <div className="period-custom-wrapper">
+                    <DateTimePicker
+                      value={customStartDate}
+                      onChange={(value) => setCustomStartDate(value)}
+                      placeholder="Data inicial"
+                    />
+                    <div className="period-divider"></div>
+                    <DateTimePicker
+                      value={customEndDate}
+                      onChange={(value) => setCustomEndDate(value)}
+                      placeholder="Data final"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Card: Exportação - Compacto */}
+              <div className="control-card export-card-compact">
+                <label className="control-card-label">
                   <Download size={16} />
-                  {exporting ? 'Exportando...' : 'CSV'}
-                </button>
-                <button
-                  className="export-btn json"
-                  onClick={() => handleExportReport('json')}
-                  disabled={exporting || selectedDeviceIds.length === 0}
-                  title="Exportar como JSON"
-                >
-                  <Download size={16} />
-                  {exporting ? 'Exportando...' : 'JSON'}
-                </button>
+                  Exportar Relatório
+                </label>
+                <div className="export-actions-row">
+                  <button
+                    className="export-action-btn-compact csv"
+                    onClick={() => handleExportReport('csv')}
+                    disabled={exporting || selectedDeviceIds.length === 0}
+                    title="Exportar como CSV"
+                  >
+                    <FileText size={16} />
+                    {exporting ? 'Exportando...' : 'CSV'}
+                  </button>
+                  <button
+                    className="export-action-btn-compact json"
+                    onClick={() => handleExportReport('json')}
+                    disabled={exporting || selectedDeviceIds.length === 0}
+                    title="Exportar como JSON"
+                  >
+                    <FileJson size={16} />
+                    {exporting ? 'Exportando...' : 'JSON'}
+                  </button>
+                </div>
+                {selectedDeviceIds.length === 0 && (
+                  <p className="export-hint">Selecione pelo menos um medidor</p>
+                )}
               </div>
             </div>
           </div>
@@ -750,7 +750,9 @@ const RoomChartsPage: React.FC = () => {
 
             {/* Stats Cards */}
             <div className="room-stats-grid">
-              {metricsConfig.map(metric => getStatCard(metric))}
+              {metricsConfig
+                .filter(metric => selectedMetrics.includes(metric.key))
+                .map(metric => getStatCard(metric))}
             </div>
 
             {/* Charts */}

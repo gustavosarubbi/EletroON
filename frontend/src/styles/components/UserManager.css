@@ -2231,13 +2231,10 @@
   border-radius: 12px;
   border: 1px solid rgba(59, 130, 246, 0.3);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-  min-width: 300px;
-  max-width: 500px;
-  max-height: 90vh;
+  min-width: 280px;
+  max-width: 400px;
   overflow: hidden;
   pointer-events: auto;
-  display: flex;
-  flex-direction: column;
 }
 
 .password-popover-header {
@@ -2280,9 +2277,6 @@
 
 .password-popover-body {
   padding: 16px;
-  overflow-y: auto;
-  flex: 1;
-  min-height: 0;
 }
 
 .password-value {
@@ -2293,55 +2287,12 @@
   border-radius: 8px;
   border: 1px solid rgba(59, 130, 246, 0.2);
   font-family: 'Courier New', monospace;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: #60a5fa;
-  text-align: left;
+  text-align: center;
   word-break: break-all;
-  word-wrap: break-word;
-  white-space: pre-wrap;
-  overflow-wrap: break-word;
   box-shadow: 0 0 12px rgba(59, 130, 246, 0.15);
-  line-height: 1.6;
-  max-height: 400px;
-  overflow-y: auto;
-}
-
-/* Scrollbar customizado para password-value */
-.password-value::-webkit-scrollbar {
-  width: 8px;
-}
-
-.password-value::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 4px;
-}
-
-.password-value::-webkit-scrollbar-thumb {
-  background: rgba(59, 130, 246, 0.4);
-  border-radius: 4px;
-}
-
-.password-value::-webkit-scrollbar-thumb:hover {
-  background: rgba(59, 130, 246, 0.6);
-}
-
-.password-popover-body::-webkit-scrollbar {
-  width: 8px;
-}
-
-.password-popover-body::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 4px;
-}
-
-.password-popover-body::-webkit-scrollbar-thumb {
-  background: rgba(59, 130, 246, 0.4);
-  border-radius: 4px;
-}
-
-.password-popover-body::-webkit-scrollbar-thumb:hover {
-  background: rgba(59, 130, 246, 0.6);
 }
 
 @keyframes fadeInUp {

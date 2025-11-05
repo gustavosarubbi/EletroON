@@ -31,36 +31,9 @@ const UserTableRow: React.FC<UserTableRowProps> = ({
     const updatePosition = () => {
       if (showPassword && passwordButtonRef.current) {
         const rect = passwordButtonRef.current.getBoundingClientRect();
-        const popoverWidth = 500; // max-width do popover
-        const popoverHeight = 400; // max-height aproximado
-        const viewportWidth = window.innerWidth;
-        const viewportHeight = window.innerHeight;
-        
-        // Calcular posição horizontal
-        let left = rect.left;
-        if (left + popoverWidth > viewportWidth - 16) {
-          left = viewportWidth - popoverWidth - 16;
-        }
-        if (left < 16) {
-          left = 16;
-        }
-        
-        // Calcular posição vertical
-        let top = rect.bottom + 8;
-        if (top + popoverHeight > viewportHeight - 16) {
-          // Se não cabe abaixo, tentar acima
-          const spaceAbove = rect.top;
-          if (spaceAbove > popoverHeight + 16) {
-            top = rect.top - popoverHeight - 8;
-          } else {
-            // Se não cabe nem acima nem abaixo, ajustar para o máximo disponível
-            top = Math.max(16, viewportHeight - popoverHeight - 16);
-          }
-        }
-        
         setPasswordPopoverPosition({
-          top,
-          left
+          top: rect.bottom + 8,
+          left: rect.left
         });
       } else {
         setPasswordPopoverPosition(null);

@@ -2,7 +2,7 @@ import { Controller, Post, Get, Body, Param, ParseIntPipe, Query, UseGuards, Req
 import { EletroonService } from './eletroon.service';
 import type { IncomingData, AuthenticatedUser } from '../types/common.types';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { Response } from 'express';
+import type { Response } from 'express';
 
 @Controller('eletroon')
 export class EletroonController {
@@ -38,10 +38,10 @@ export class EletroonController {
   @UseGuards(JwtAuthGuard)
   async getDeviceReadingsByPeriod(
     @Param('meterId', ParseIntPipe) meterId: number,
+    @Request() req: { user: AuthenticatedUser },
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
     @Query('limit') limit?: string,
-    @Request() req: { user: AuthenticatedUser },
   ) {
     const limitNum = limit ? parseInt(limit, 10) : 1000;
     const start = startDate ? new Date(startDate) : undefined;
@@ -52,11 +52,11 @@ export class EletroonController {
   @Get('devices/readings/multiple')
   @UseGuards(JwtAuthGuard)
   async getMultipleDevicesReadings(
+    @Request() req: { user: AuthenticatedUser },
     @Query('meterIds') meterIds: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
     @Query('limit') limit?: string,
-    @Request() req: { user: AuthenticatedUser },
   ) {
     const meterIdsArray = meterIds.split(',').map(id => parseInt(id.trim(), 10)).filter(id => !isNaN(id));
     const limitNum = limit ? parseInt(limit, 10) : 2000;
@@ -68,12 +68,12 @@ export class EletroonController {
   @Get('devices/readings/export')
   @UseGuards(JwtAuthGuard)
   async exportReadingsReport(
+    @Request() req: { user: AuthenticatedUser },
+    @Res() res: Response,
     @Query('meterIds') meterIds: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
     @Query('format') format: string = 'csv',
-    @Request() req: { user: AuthenticatedUser },
-    @Res() res: Response,
   ) {
     const meterIdsArray = meterIds ? meterIds.split(',').map(id => parseInt(id.trim(), 10)).filter(id => !isNaN(id)) : [];
     const start = startDate ? new Date(startDate) : undefined;
@@ -84,3 +84,4 @@ export class EletroonController {
     res.setHeader('Content-Disposition', `attachment; filename="${report.filename}"`);
     res.send(report.content);
   }
+}

@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { Device, Reading, User, DashboardStats, ExportOptions } from '../types/dashboard';
 
-const API_BASE_URL = 'http://localhost:3000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 // Configuração do Axios
 const api = axios.create({

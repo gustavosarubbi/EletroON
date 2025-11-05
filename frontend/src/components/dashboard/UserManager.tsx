@@ -19,7 +19,9 @@ import {
   AlertCircle,
   Search,
   SlidersHorizontal,
-  Users as UsersIcon,
+  UsersRound,
+  UserCog,
+  Shield,
   CheckCircle2,
   MoreVertical,
   LayoutGrid,
@@ -30,8 +32,7 @@ import {
   CheckSquare,
   Square,
   RefreshCw,
-  FileText,
-  FilterX
+  FileText
 } from 'lucide-react';
 import { dashboardService } from '../../services/dashboardService';
 import '../../styles/components/UserManager.css';
@@ -79,7 +80,7 @@ const UserManager: React.FC = () => {
   const [filterRole, setFilterRole] = useState<'all' | 'admin' | 'user'>('all');
   
   // Novos estados para funcionalidades modernas
-  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
   const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
   const [sortConfig, setSortConfig] = useState<{ key: keyof UserData | 'devices'; direction: 'asc' | 'desc' } | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -347,14 +348,17 @@ const UserManager: React.FC = () => {
             title="Selecionar todos"
           >
             {selectedUsers.length === paginatedUsers.length && paginatedUsers.length > 0 ? (
-              <CheckSquare size={18} />
+              <>
+                <CheckSquare size={18} />
+                <span>Selecionar todos</span>
+              </>
             ) : (
-              <Square size={18} />
+              <>
+                <Square size={18} />
+                <span>Selecionar todos</span>
+              </>
             )}
           </button>
-        </th>
-        <th className="table-expand-column">
-          <span>Detalhes</span>
         </th>
         <th 
           className="table-sortable"
@@ -420,73 +424,78 @@ const UserManager: React.FC = () => {
 
   // Renderizar linha da tabela
   const renderTableRow = (user: UserData) => {
-    const isExpanded = expandedRows.has(user.id);
     return (
-      <React.Fragment key={user.id}>
-        <tr 
-          className={selectedUsers.includes(user.id) ? 'table-row-selected' : ''}
-        >
-      <td className="table-checkbox-column">
-        <button 
-          className="checkbox-btn"
-          onClick={() => handleSelectUser(user.id)}
-        >
-          {selectedUsers.includes(user.id) ? (
-            <CheckSquare size={18} />
-          ) : (
-            <Square size={18} />
-          )}
-        </button>
-      </td>
-      <td>
-        <button
-          className="expand-row-btn"
-          onClick={() => toggleRowExpand(user.id)}
-          title={isExpanded ? "Recolher detalhes" : "Expandir detalhes"}
-        >
-          {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-        </button>
-      </td>
-      <td>
-        <div className="table-cell-email">
-          <Mail size={16} />
-          <span>{user.email}</span>
-        </div>
-      </td>
-      <td>
-        <div className={`role-badge-table ${user.role}`}>
-          {user.role === 'admin' ? 'Administrador' : 'Usuário'}
-        </div>
-      </td>
-      <td>
-        <div className="table-cell-meters">
-          <Zap size={16} />
-          <span>{user.devices.length}</span>
-        </div>
-      </td>
-      <td>
-        <div className="table-cell-date">
-          <Clock size={16} />
-          <span>{new Date(user.createdAt).toLocaleDateString('pt-BR')}</span>
-        </div>
-      </td>
-      <td>
-        <div className="table-actions-cell">
-          <div className="table-action-buttons">
-            <button
-              className="table-action-btn edit"
-              onClick={() => handleEditUser(user.id)}
-              title="Editar"
+      <tr 
+        key={user.id}
+        className={selectedUsers.includes(user.id) ? 'table-row-selected' : ''}
+      >
+        <td className="table-checkbox-column">
+          <div className="table-cell-item">
+            <button 
+              className="checkbox-btn"
+              onClick={() => handleSelectUser(user.id)}
             >
-              <Edit3 size={16} />
+              {selectedUsers.includes(user.id) ? (
+                <CheckSquare size={18} />
+              ) : (
+                <Square size={18} />
+              )}
             </button>
-            <button
-              className="table-action-btn delete"
-              onClick={() => handleDeleteUser(user.id)}
-              title="Excluir"
-            >
-              <Trash2 size={16} />
-            </button>
+          </div>
+        </td>
+        <td>
+          <div className="table-cell-item">
+            <div className="table-cell-email">
+              <Mail size={16} />
+              <span>{user.email}</span>
+            </div>
+          </div>
+        </td>
+        <td>
+          <div className="table-cell-item">
+            <div className={`role-badge-table ${user.role}`}>
+              {user.role === 'admin' ? 'Administrador' : 'Usuário'}
+            </div>
+          </div>
+        </td>
+        <td>
+          <div className="table-cell-item">
+            <div className="table-cell-meters">
+              <Zap size={16} />
+              <span>{user.devices.length}</span>
+            </div>
+          </div>
+        </td>
+        <td>
+          <div className="table-cell-item">
+            <div className="table-cell-date">
+              <Clock size={16} />
+              <span>{new Date(user.createdAt).toLocaleDateString('pt-BR')}</span>
+            </div>
+          </div>
+        </td>
+        <td>
+          <div className="table-actions-cell">
+            <div className="table-action-btn-wrapper">
+              <button
+                className="table-action-btn edit"
+                onClick={() => handleEditUser(user.id)}
+                title="Editar"
+              >
+                <Edit3 size={16} />
+              </button>
+            </div>
+            <div className="table-action-divider"></div>
+            <div className="table-action-btn-wrapper">
+              <button
+                className="table-action-btn delete"
+                onClick={() => handleDeleteUser(user.id)}
+                title="Excluir"
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
+            <div className="table-action-divider"></div>
             <div className="table-action-menu">
               <button
                 className="table-action-btn menu"
@@ -521,83 +530,8 @@ const UserManager: React.FC = () => {
               )}
             </div>
           </div>
-        </div>
-      </td>
-    </tr>
-    {isExpanded && (
-      <tr className="table-row-expanded">
-        <td colSpan={7}>
-          <div className="expanded-row-content">
-            <div className="expanded-row-section">
-              <h4>Informações do Usuário</h4>
-              <div className="expanded-details">
-                <div className="detail-row">
-                  <span className="detail-label">Email:</span>
-                  <span className="detail-value">{user.email}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Senha:</span>
-                  <span className="detail-value">
-                    {showPasswords[user.id] ? (user.password || 'N/A') : '********'}
-                    <button
-                      className="toggle-password-inline"
-                      onClick={() => togglePasswordVisibility(user.id)}
-                      title={showPasswords[user.id] ? "Ocultar senha" : "Mostrar senha"}
-                    >
-                      {showPasswords[user.id] ? <EyeOff size={14} /> : <Eye size={14} />}
-                    </button>
-                  </span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Função:</span>
-                  <span className="detail-value">
-                    <div className={`role-badge-table ${user.role}`}>
-                      {user.role === 'admin' ? 'Administrador' : 'Usuário'}
-                    </div>
-                  </span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Data de Criação:</span>
-                  <span className="detail-value">
-                    {new Date(user.createdAt).toLocaleString('pt-BR')}
-                  </span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Medidores:</span>
-                  <span className="detail-value">{user.devices.length} associado(s)</span>
-                </div>
-              </div>
-            </div>
-            {user.devices.length > 0 && (
-              <div className="expanded-row-section">
-                <h4>Medidores Associados</h4>
-                <div className="devices-list-expanded">
-                  {user.devices.map(device => (
-                    <div key={device.meterId} className="device-item-expanded">
-                      <div className="device-header-expanded">
-                        <Zap size={16} />
-                        <span className="device-name">{device.name}</span>
-                        <div className={`meter-status-badge ${device.status.toLowerCase()}`}>
-                          {device.status === 'ONLINE' ? <Wifi size={12} /> : <WifiOff size={12} />}
-                          {device.status}
-                        </div>
-                      </div>
-                      {device.location && (
-                        <div className="device-location">
-                          <MapPin size={12} />
-                          {device.location}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
         </td>
       </tr>
-    )}
-    </React.Fragment>
     );
   };
 
@@ -640,66 +574,61 @@ const UserManager: React.FC = () => {
       {/* Header com Estatísticas */}
       <div className="user-manager-header">
         <div className="header-stats">
-          <div className="stat-card">
-            <div className="stat-icon users">
-              <UsersIcon size={24} />
+          <div className="stat-card users-card">
+            <div className="stat-header">
+              <div className="stat-title-container">
+                <div className="status-indicator users"></div>
+                <div className="stat-title">Total de Usuários</div>
+              </div>
+              <div className="stat-icon users">
+                <UsersRound size={24} />
+              </div>
             </div>
             <div className="stat-content">
               <div className="stat-value">{users.length}</div>
-              <div className="stat-label">Total de Usuários</div>
+              <div className="stat-label">Usuários cadastrados</div>
+              <div className="stat-progress">
+                <div className="stat-progress-bar users" style={{ width: '100%' }}></div>
+              </div>
             </div>
           </div>
-          <div className="stat-card">
-            <div className="stat-icon admins">
-              <User size={24} />
+          <div className="stat-card admins-card">
+            <div className="stat-header">
+              <div className="stat-title-container">
+                <div className="status-indicator admins"></div>
+                <div className="stat-title">Administradores</div>
+              </div>
+              <div className="stat-icon admins">
+                <Shield size={24} />
+              </div>
             </div>
             <div className="stat-content">
               <div className="stat-value">{users.filter(u => u.role === 'admin').length}</div>
-              <div className="stat-label">Administradores</div>
+              <div className="stat-label">Usuários administrativos</div>
+              <div className="stat-progress">
+                <div className="stat-progress-bar admins" style={{ width: '100%' }}></div>
+              </div>
             </div>
           </div>
-          <div className="stat-card">
-            <div className="stat-icon regular">
-              <UsersIcon size={24} />
+          <div className="stat-card regular-card">
+            <div className="stat-header">
+              <div className="stat-title-container">
+                <div className="status-indicator regular"></div>
+                <div className="stat-title">Usuários Regulares</div>
+              </div>
+              <div className="stat-icon regular">
+                <UserCog size={24} />
+              </div>
             </div>
             <div className="stat-content">
               <div className="stat-value">{regularUsers.length}</div>
-              <div className="stat-label">Usuários Regulares</div>
+              <div className="stat-label">Usuários comuns</div>
+              <div className="stat-progress">
+                <div className="stat-progress-bar regular" style={{ width: '100%' }}></div>
+              </div>
             </div>
           </div>
         </div>
-
-        {/* Badge de Filtros Ativos */}
-        {(searchQuery || filterRole !== 'all') && (
-          <div className="filter-badge-container">
-            <div className="filter-badge">
-              <SlidersHorizontal size={14} />
-              <span>Filtros ativos:</span>
-              {searchQuery && (
-                <span className="filter-badge-item">
-                  Busca: "{searchQuery}"
-                  <button 
-                    className="filter-badge-remove"
-                    onClick={() => setSearchQuery('')}
-                  >
-                    <X size={12} />
-                  </button>
-                </span>
-              )}
-              {filterRole !== 'all' && (
-                <span className="filter-badge-item">
-                  {filterRole === 'admin' ? 'Administradores' : 'Usuários'}
-                  <button 
-                    className="filter-badge-remove"
-                    onClick={() => setFilterRole('all')}
-                  >
-                    <X size={12} />
-                  </button>
-                </span>
-              )}
-            </div>
-          </div>
-        )}
 
         {/* Toolbar Moderna */}
         <div className="toolbar-modern">
@@ -726,13 +655,6 @@ const UserManager: React.FC = () => {
                 <option value="user">Usuários</option>
               </select>
             </div>
-            <button 
-              className="toolbar-btn secondary"
-              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-            >
-              <FilterX size={18} />
-              <span>Filtros</span>
-            </button>
           </div>
 
           <div className="toolbar-right">
@@ -757,21 +679,19 @@ const UserManager: React.FC = () => {
               </div>
             )}
             
-            <div className="view-mode-toggle">
-              <button
-                className={`view-mode-btn ${viewMode === 'grid' ? 'active' : ''}`}
-                onClick={() => setViewMode('grid')}
-                title="Vista em grade"
-              >
-                <LayoutGrid size={18} />
-              </button>
-              <button
-                className={`view-mode-btn ${viewMode === 'table' ? 'active' : ''}`}
-                onClick={() => setViewMode('table')}
-                title="Vista em tabela"
-              >
-                <List size={18} />
-              </button>
+            <div className="view-mode-toggle-switch">
+              <input
+                type="checkbox"
+                id="view-mode-toggle"
+                checked={viewMode === 'table'}
+                onChange={(e) => setViewMode(e.target.checked ? 'table' : 'grid')}
+                className="toggle-input"
+              />
+              <label htmlFor="view-mode-toggle" className="toggle-label">
+                <span className="toggle-slider">
+                  {viewMode === 'grid' ? <LayoutGrid size={14} /> : <List size={14} />}
+                </span>
+              </label>
             </div>
 
             <div className="export-menu">
@@ -969,7 +889,7 @@ const UserManager: React.FC = () => {
               </div>
             ) : (
               <div className="empty-state">
-                <UsersIcon size={64} />
+                <UsersRound size={64} />
                 <h4>Nenhum usuário regular encontrado</h4>
                 <p>Adicione usuários regulares para gerenciar seus medidores</p>
               </div>
@@ -1120,7 +1040,7 @@ const UserManager: React.FC = () => {
                 paginatedUsers.map(user => renderTableRow(user))
               ) : (
                 <tr>
-                  <td colSpan={6} className="table-empty">
+                  <td colSpan={5} className="table-empty">
                     <div className="empty-state">
                       <Search size={64} />
                       <h4>Nenhum usuário encontrado</h4>
@@ -1218,3 +1138,5 @@ const UserManager: React.FC = () => {
 };
 
 export default UserManager;
+
+

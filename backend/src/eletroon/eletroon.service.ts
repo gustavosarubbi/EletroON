@@ -339,3 +339,30 @@ export class EletroonService {
       contentType: 'application/json',
     };
   }
+
+  async listarDevicesDoUsuario(userId: number) {
+    try {
+      const devices = await this.prisma.device.findMany({
+        where: {
+          userId,
+        },
+        select: {
+          meterId: true,
+          name: true,
+          location: true,
+          createdAt: true,
+          updatedAt: true,
+          _count: {
+            select: { readings: true },
+          },
+        },
+        orderBy: { meterId: 'asc' },
+      });
+
+      return devices;
+    } catch (error) {
+      this.logger.error('Falha ao listar devices do usuário', error.stack);
+      throw new InternalServerErrorException('Erro interno ao listar devices do usuário.');
+    }
+  }
+}

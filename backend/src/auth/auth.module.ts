@@ -6,6 +6,7 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
 import { UsersModule } from '../users/users.module';
+import type { JwtModuleOptions } from '@nestjs/jwt';
 
 @Module({
   imports: [
@@ -13,7 +14,7 @@ import { UsersModule } from '../users/users.module';
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => {
+      useFactory: (configService: ConfigService): JwtModuleOptions => {
         const jwtSecret = configService.get<string>('JWT_SECRET');
         if (!jwtSecret) {
           throw new Error('JWT_SECRET não está configurado');
@@ -22,7 +23,7 @@ import { UsersModule } from '../users/users.module';
         return {
           secret: jwtSecret,
           signOptions: {
-            expiresIn: expiresIn,
+            expiresIn: expiresIn as any,
           },
         };
       },

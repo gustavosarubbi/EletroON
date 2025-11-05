@@ -1,7 +1,7 @@
 import React from 'react';
-import { LayoutDashboard, ChevronRight, Users } from 'lucide-react';
+import { LayoutDashboard, ChevronRight, UserCog } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import UserManager from '../components/dashboard/UserManager';
+import UserManager from '../components/dashboard/UserManager/UserManager';
 import LoginParticles from '../components/ui/LoginParticles';
 import Sidebar from '../components/dashboard/Sidebar';
 import '../styles/components/Dashboard.css';
@@ -37,6 +37,7 @@ const UserManagementPage: React.FC = () => {
             <LayoutDashboard size={18} />
             <span>Dashboard</span>
             <ChevronRight size={18} />
+            <UserCog size={18} />
             <span className="breadcrumb-active">Gerenciamento de Usuário</span>
           </div>
         </div>

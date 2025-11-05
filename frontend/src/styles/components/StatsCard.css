@@ -54,10 +54,20 @@
 .stats-card.blue .stats-icon {
   background: rgba(59, 130, 246, 0.15);
   border: 1px solid rgba(59, 130, 246, 0.3);
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.25);
 }
 
 .stats-card.blue .stats-icon svg {
   color: #60a5fa;
+  filter: drop-shadow(0 0 4px rgba(59, 130, 246, 0.4));
+}
+
+.stats-card.blue:hover .stats-icon {
+  box-shadow: 0 0 16px rgba(59, 130, 246, 0.35);
+}
+
+.stats-card.blue:hover .stats-icon svg {
+  filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.5));
 }
 
 .stats-card.blue .stats-progress-bar {
@@ -86,10 +96,20 @@
 .stats-card.green .stats-icon {
   background: rgba(16, 185, 129, 0.15);
   border: 1px solid rgba(16, 185, 129, 0.3);
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.25);
 }
 
 .stats-card.green .stats-icon svg {
   color: #34d399;
+  filter: drop-shadow(0 0 4px rgba(16, 185, 129, 0.4));
+}
+
+.stats-card.green:hover .stats-icon {
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.35);
+}
+
+.stats-card.green:hover .stats-icon svg {
+  filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.5));
 }
 
 .stats-card.green .stats-progress-bar {
@@ -118,10 +138,20 @@
 .stats-card.red .stats-icon {
   background: rgba(239, 68, 68, 0.15);
   border: 1px solid rgba(239, 68, 68, 0.3);
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.25);
 }
 
 .stats-card.red .stats-icon svg {
   color: #f87171;
+  filter: drop-shadow(0 0 4px rgba(239, 68, 68, 0.4));
+}
+
+.stats-card.red:hover .stats-icon {
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.35);
+}
+
+.stats-card.red:hover .stats-icon svg {
+  filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.5));
 }
 
 .stats-card.red .stats-progress-bar {
@@ -150,10 +180,20 @@
 .stats-card.amber .stats-icon {
   background: rgba(251, 146, 60, 0.15);
   border: 1px solid rgba(251, 146, 60, 0.3);
+  box-shadow: 0 0 12px rgba(251, 146, 60, 0.25);
 }
 
 .stats-card.amber .stats-icon svg {
   color: #fb923c;
+  filter: drop-shadow(0 0 4px rgba(251, 146, 60, 0.4));
+}
+
+.stats-card.amber:hover .stats-icon {
+  box-shadow: 0 0 16px rgba(251, 146, 60, 0.35);
+}
+
+.stats-card.amber:hover .stats-icon svg {
+  filter: drop-shadow(0 0 6px rgba(251, 146, 60, 0.5));
 }
 
 .stats-card.amber .stats-progress-bar {
@@ -192,8 +232,8 @@
 }
 
 .stats-icon {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -204,8 +244,8 @@
 }
 
 .stats-icon svg {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   transition: all 0.2s ease;
   z-index: 1;
   position: relative;
@@ -214,11 +254,6 @@
 
 .stats-card:hover .stats-icon {
   transform: scale(1.05);
-}
-
-.stats-card:hover .stats-icon svg {
-  /* Sem mudanças de brilho */
-  color: inherit;
 }
 
 /* Card Content */
@@ -357,13 +392,13 @@
   }
   
   .stats-icon {
-    width: 44px;
-    height: 44px;
+    width: 48px;
+    height: 48px;
   }
-  
+
   .stats-icon svg {
-    width: 22px;
-    height: 22px;
+    width: 26px;
+    height: 26px;
   }
 }
 
@@ -386,13 +421,13 @@
   }
   
   .stats-icon {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
   }
-  
+
   .stats-icon svg {
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
   }
 }
 

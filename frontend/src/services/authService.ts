@@ -3,7 +3,7 @@ import { LoginCredentials, AuthResponse } from '../types/auth';
 
 // ⚠️ IMPORTANTE: Este projeto usa pnpm para gerenciamento de pacotes
 
-const API_BASE_URL = 'http://localhost:3000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 // Configuração do Axios
 const api = axios.create({

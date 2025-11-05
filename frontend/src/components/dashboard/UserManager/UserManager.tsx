@@ -174,9 +174,15 @@ const UserManager: React.FC = () => {
       {!showAddForm && !showMeterManagement && viewMode === 'grid' && (
         <UserGridView
           users={paginatedUsers}
+          selectedUsers={selectedUsers}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={sortedUsers.length}
           editingUserId={editingUserId}
           showPasswords={showPasswords}
           editData={editData}
+          onSelectAll={handleSelectAll}
+          onSelectUser={handleSelectUser}
           onEditUser={handleEditUser}
           onSaveUser={handleSaveUser}
           onCancelEdit={handleCancelEdit}
@@ -184,6 +190,7 @@ const UserManager: React.FC = () => {
           onTogglePassword={togglePasswordVisibility}
           onViewMeters={setSelectedUserId}
           onEditChange={handleEditChange}
+          onPageChange={setCurrentPage}
         />
       )}
 

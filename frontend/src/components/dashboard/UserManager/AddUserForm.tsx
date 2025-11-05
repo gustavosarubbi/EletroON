@@ -1,5 +1,5 @@
 import React from 'react';
-import { Mail, Lock, User, X, CheckCircle2 } from 'lucide-react';
+import { Mail, Lock, User, X, CheckCircle2, UserPlus } from 'lucide-react';
 import { NewUserForm } from './types';
 
 interface AddUserFormProps {
@@ -18,37 +18,40 @@ const AddUserForm: React.FC<AddUserFormProps> = ({
   return (
     <div className="add-user-card">
       <div className="card-header">
-        <h3>Novo Usuário</h3>
+        <h3>
+          <UserPlus size={18} />
+          Novo Usuário
+        </h3>
         <button className="close-btn" onClick={onCancel}>
           <X size={20} />
         </button>
       </div>
       <div className="card-body">
-        <div className="form-row">
-          <div className="form-group">
-            <label>
-              <Mail size={16} />
-              Email
-            </label>
-            <input
-              type="email"
-              value={newUser.email}
-              onChange={(e) => onUserChange({ ...newUser, email: e.target.value })}
-              placeholder="usuario@exemplo.com"
-            />
-          </div>
-          <div className="form-group">
-            <label>
-              <Lock size={16} />
-              Senha
-            </label>
-            <input
-              type="password"
-              value={newUser.password}
-              onChange={(e) => onUserChange({ ...newUser, password: e.target.value })}
-              placeholder="Digite a senha"
-            />
-          </div>
+        <div className="form-group">
+          <label>
+            <Mail size={16} />
+            Email
+          </label>
+          <input
+            type="email"
+            value={newUser.email}
+            onChange={(e) => onUserChange({ ...newUser, email: e.target.value })}
+            placeholder="usuario@exemplo.com"
+            autoComplete="email"
+          />
+        </div>
+        <div className="form-group">
+          <label>
+            <Lock size={16} />
+            Senha
+          </label>
+          <input
+            type="password"
+            value={newUser.password}
+            onChange={(e) => onUserChange({ ...newUser, password: e.target.value })}
+            placeholder="Digite a senha"
+            autoComplete="new-password"
+          />
         </div>
         <div className="form-group">
           <label>
@@ -64,11 +67,11 @@ const AddUserForm: React.FC<AddUserFormProps> = ({
           </select>
         </div>
         <div className="form-actions">
-          <button className="btn-primary" onClick={onSave}>
+          <button className="btn-primary btn-save" onClick={onSave}>
             <CheckCircle2 size={18} />
             <span>Salvar Usuário</span>
           </button>
-          <button className="btn-secondary" onClick={onCancel}>
+          <button className="btn-secondary btn-cancel" onClick={onCancel}>
             <X size={18} />
             <span>Cancelar</span>
           </button>

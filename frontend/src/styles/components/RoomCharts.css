@@ -623,7 +623,7 @@
 
 .room-select-unified {
   width: 100%;
-  padding: 12px 16px;
+  padding: 12px 32px 12px 16px;
   background: rgba(30, 41, 59, 0.8);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 10px;

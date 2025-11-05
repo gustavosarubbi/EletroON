@@ -1,12 +1,14 @@
 import React from 'react';
-import { User, Mail, Lock, Edit3, Save, X, Eye, EyeOff, Trash2, Zap, Clock } from 'lucide-react';
+import { UsersRound, Mail, Lock, Edit3, Save, X, Eye, EyeOff, Trash2, Zap, Clock, CheckSquare, Square } from 'lucide-react';
 import { UserData, EditUserData } from './types';
 
 interface UserCardProps {
   user: UserData;
+  isSelected?: boolean;
   isEditing: boolean;
   editData?: EditUserData;
   showPassword: boolean;
+  onSelect?: () => void;
   onEditChange: (data: EditUserData) => void;
   onSave: () => void;
   onCancel: () => void;
@@ -18,9 +20,11 @@ interface UserCardProps {
 
 const UserCard: React.FC<UserCardProps> = ({
   user,
+  isSelected = false,
   isEditing,
   editData,
   showPassword,
+  onSelect,
   onEditChange,
   onSave,
   onCancel,
@@ -30,10 +34,27 @@ const UserCard: React.FC<UserCardProps> = ({
   onViewMeters,
 }) => {
   return (
-    <div className="user-card-modern">
+    <div className={`user-card-modern ${isSelected ? 'card-selected' : ''}`}>
+      {onSelect && (
+        <button 
+          className="card-checkbox-btn"
+          onClick={(e) => {
+            e.stopPropagation();
+            onSelect();
+          }}
+          aria-label={isSelected ? 'Desmarcar usuário' : 'Selecionar usuário'}
+          aria-pressed={isSelected}
+        >
+          {isSelected ? (
+            <CheckSquare size={18} />
+          ) : (
+            <Square size={18} />
+          )}
+        </button>
+      )}
       <div className="user-card-header-modern">
         <div className="user-avatar-modern">
-          <User size={24} />
+          <UsersRound size={24} />
         </div>
         <div className="user-info-modern">
           <div className="user-email-modern">
@@ -85,10 +106,10 @@ const UserCard: React.FC<UserCardProps> = ({
       ) : (
         <>
           <div className="user-details-modern">
-            <div className="detail-item">
+            <div className="detail-item password-item">
               <Lock size={14} />
               <span className="detail-label">Senha:</span>
-              <span className="detail-value">
+              <span className="detail-value password-value-card">
                 {showPassword ? (user.password || 'N/A') : '********'}
               </span>
               <button className="toggle-password-modern" onClick={onTogglePassword}>

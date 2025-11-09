@@ -24,4 +24,22 @@ export class AdminController {
   async getDevices(@Request() req: { user: AuthenticatedUser }) {
     return this.adminService.getDevices();
   }
+
+  @Get('consumption/last24h')
+  @UseGuards(JwtAuthGuard)
+  async getConsumptionLast24Hours(@Request() req: { user: AuthenticatedUser }) {
+    return this.adminService.getConsumptionLast24Hours();
+  }
+
+  @Get('readings/weekly')
+  @UseGuards(JwtAuthGuard)
+  async getWeeklyReadings(@Request() req: { user: AuthenticatedUser }) {
+    return this.adminService.getWeeklyReadings();
+  }
+
+  @Get('activity-logs')
+  @UseGuards(JwtAuthGuard)
+  async getActivityLogs(@Request() req: { user: AuthenticatedUser }) {
+    return this.adminService.getRecentActivityLogs(5);
+  }
 }

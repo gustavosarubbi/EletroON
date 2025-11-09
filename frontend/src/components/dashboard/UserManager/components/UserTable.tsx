@@ -14,16 +14,12 @@ interface UserTableProps {
   totalItems: number;
   editingUserId: number | null;
   showPasswords: { [key: number]: boolean };
-  editData: { [key: number]: { email: string; password: string } };
   onSort: (key: SortKey) => void;
   onSelectAll: () => void;
   onSelectUser: (userId: number) => void;
   onEditUser: (userId: number) => void;
-  onSaveUser: (userId: number) => void;
-  onCancelEdit: () => void;
   onDeleteUser: (userId: number) => void;
   onTogglePassword: (userId: number) => void;
-  onEditChange: (userId: number, data: { email: string; password: string }) => void;
   onPageChange: (page: number) => void;
 }
 
@@ -36,16 +32,12 @@ const UserTable: React.FC<UserTableProps> = ({
   totalItems,
   editingUserId,
   showPasswords,
-  editData,
   onSort,
   onSelectAll,
   onSelectUser,
   onEditUser,
-  onSaveUser,
-  onCancelEdit,
   onDeleteUser,
   onTogglePassword,
-  onEditChange,
   onPageChange,
 }) => {
   return (

@@ -39,6 +39,8 @@ interface ChartProps {
       fill?: boolean;
       tension?: number;
       borderWidth?: number;
+      type?: 'line' | 'bar';
+      yAxisID?: string;
     }>;
   };
   title: string;
@@ -48,6 +50,10 @@ interface ChartProps {
 
 const Chart: React.FC<ChartProps> = ({ data, title, height = 300, type = 'line' }) => {
   const chartRef = useRef<ChartJS<'line' | 'bar' | 'doughnut'>>(null);
+
+  const primaryDatasets = data.datasets.filter(dataset => dataset.yAxisID !== 'y1');
+  const primaryValues = primaryDatasets.flatMap(dataset => dataset.data ?? []);
+  const hasNegativeValues = primaryValues.some(value => value < 0);
 
   const options: any = {
     responsive: true,
@@ -157,7 +163,7 @@ const Chart: React.FC<ChartProps> = ({ data, title, height = 300, type = 'line' 
         position: 'left' as const,
         title: {
           display: true,
-          text: type === 'bar' ? 'Consumo (kWh)' : 'Consumo (kWh)',
+          text: type === 'bar' ? 'Energia (kWh)' : 'Energia (kWh)',
           color: 'rgba(255, 255, 255, 0.6)',
           font: {
             size: 11,
@@ -175,8 +181,7 @@ const Chart: React.FC<ChartProps> = ({ data, title, height = 300, type = 'line' 
             size: 11
           },
           padding: 6
-        },
-        beginAtZero: true
+        }
       },
       y1: {
         type: 'linear' as const,
@@ -231,6 +236,22 @@ const Chart: React.FC<ChartProps> = ({ data, title, height = 300, type = 'line' 
       }
     }
   };
+
+  if (hasNegativeValues && primaryValues.length > 0) {
+    const minValue = Math.min(...primaryValues);
+    const maxValue = Math.max(...primaryValues);
+    options.scales.y.beginAtZero = false;
+    options.scales.y.suggestedMin = minValue - Math.abs(minValue) * 0.1;
+    options.scales.y.suggestedMax = maxValue + Math.abs(maxValue) * 0.1;
+  } else {
+    options.scales.y.beginAtZero = true;
+    if (options.scales.y.suggestedMin) {
+      delete options.scales.y.suggestedMin;
+    }
+    if (options.scales.y.suggestedMax) {
+      delete options.scales.y.suggestedMax;
+    }
+  }
 
   const doughnutOptions = {
     ...options,

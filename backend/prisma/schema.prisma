@@ -21,11 +21,15 @@ model Device {
   meterId   Int       @id
   name      String
   location  String?
+  ipAddress String?
+  status    String   @default("OFFLINE")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   userId    Int?
   user      User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
   readings  Reading[]
+
+  @@index([ipAddress])
 }
 
 model Reading {

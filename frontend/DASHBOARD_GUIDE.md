@@ -32,9 +32,14 @@ O Dashboard Admin é uma interface completa para gerenciar dispositivos, usuári
 
 ### 📊 Visualização de Dados
 - **Gráficos Interativos**: Visualização de métricas com Chart.js
-- **Múltiplas Métricas**: Potência, tensão, corrente, energia
+- **Múltiplas Métricas**: Potência, tensão, corrente, consumo líquido, consumo da rede e geração própria
 - **Períodos Personalizáveis**: Últimas 24h, 7 dias, 30 dias
 - **Exportação**: Dados em CSV, XLSX ou JSON
+
+### 🧪 Qualidade dos Dados
+- **Confiabilidade**: Cada ponto informa se os dados vieram diretamente do medidor (**medido**) ou se foram estimados via potência média (**estimado**)
+- **Intervalos sem dados**: Períodos sem registros são ocultados automaticamente dos gráficos
+- **Energia negativa**: Os gráficos suportam consumo líquido negativo para representar exportação de energia
 
 ## 🎨 Design System
 

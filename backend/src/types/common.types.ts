@@ -4,8 +4,7 @@ export interface IncomingData {
 }
 
 export interface AuthenticatedUser {
-  sub: number;
-  userId: number;
+  id: number;
   email: string;
   role: string;
   meterIds?: number[];

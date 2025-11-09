@@ -37,7 +37,6 @@ const UserManager: React.FC = () => {
     selectedUser,
     newUser,
     editData,
-    openActionMenu,
     deleteConfirm,
     // Handlers
     loadUsersData,
@@ -68,7 +67,6 @@ const UserManager: React.FC = () => {
     setNewUser,
     setEditData,
     setSelectedUsers,
-    setOpenActionMenu,
   } = useUserManager();
 
   const handleClearSelection = () => {
@@ -153,20 +151,13 @@ const UserManager: React.FC = () => {
           totalItems={sortedUsers.length}
           editingUserId={editingUserId}
           showPasswords={showPasswords}
-          openActionMenu={openActionMenu}
-          editData={editData}
           onSort={handleSort}
           onSelectAll={handleSelectAll}
           onSelectUser={handleSelectUser}
           onEditUser={handleEditUser}
-          onSaveUser={handleSaveUser}
-          onCancelEdit={handleCancelEdit}
           onDeleteUser={handleDeleteUser}
           onTogglePassword={togglePasswordVisibility}
-          onViewMeters={setSelectedUserId}
-          onEditChange={handleEditChange}
           onPageChange={setCurrentPage}
-          onOpenActionMenu={setOpenActionMenu}
         />
       )}
 

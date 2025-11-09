@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Zap, Wifi, WifiOff, MapPin, Clock, Activity, TrendingUp, Unlink } from 'lucide-react';
+import { X, Zap, Wifi, WifiOff, MapPin, Clock, Activity } from 'lucide-react';
 import { UserData } from './types';
 
 interface MetersModalProps {

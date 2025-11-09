@@ -168,7 +168,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, onSave, onClose }) 
             <button
               type="submit"
               className="btn-primary"
-              disabled={isSubmitting || !!errors.email || (formData.password && !!errors.password)}
+              disabled={Boolean(isSubmitting || errors.email || (formData.password && errors.password))}
             >
               <Save size={14} />
               <span>{isSubmitting ? 'Salvando...' : 'Salvar'}</span>

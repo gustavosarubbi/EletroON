@@ -1,5 +1,13 @@
 import axios from 'axios';
-import { Device, Reading, User, DashboardStats, ExportOptions } from '../types/dashboard';
+import {
+  Device,
+  Reading,
+  User,
+  DashboardStats,
+  ExportOptions,
+  ConsumptionSummary,
+  WeeklySummary,
+} from '../types/dashboard';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
@@ -204,6 +212,39 @@ export const dashboardService = {
       return response.data;
     } catch (error) {
       console.error('Erro ao exportar relatório:', error);
+      throw error;
+    }
+  },
+
+  // Buscar consumo das últimas 24 horas
+  async getConsumptionLast24Hours(): Promise<ConsumptionSummary[]> {
+    try {
+      const response = await api.get('/admin/consumption/last24h');
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao buscar consumo das últimas 24h:', error);
+      throw error;
+    }
+  },
+
+  // Buscar leituras semanais
+  async getWeeklyReadings(): Promise<WeeklySummary[]> {
+    try {
+      const response = await api.get('/admin/readings/weekly');
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao buscar leituras semanais:', error);
+      throw error;
+    }
+  },
+
+  // Buscar logs de atividade recentes
+  async getActivityLogs(): Promise<{ type: string; message: string; time: string; timestamp: Date }[]> {
+    try {
+      const response = await api.get('/admin/activity-logs');
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao buscar logs de atividade:', error);
       throw error;
     }
   },

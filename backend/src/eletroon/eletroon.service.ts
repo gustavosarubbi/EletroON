@@ -1,99 +1,293 @@
-import { Injectable, Logger, NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, InternalServerErrorException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { IncomingData, ReadingData } from '../types/common.types';
+import { DataParserService } from './services/data-parser.service';
+import { DataValidatorService } from './services/data-validator.service';
+import { IpExtractorService } from './services/ip-extractor.service';
+import { MeterIdExtractorService } from './services/meter-id-extractor.service';
+import { logDebug, logError, logInfo, logWarn } from '../common/utils/logger.util';
 
 @Injectable()
 export class EletroonService {
   private readonly logger = new Logger(EletroonService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private dataParser: DataParserService,
+    private dataValidator: DataValidatorService,
+    private ipExtractor: IpExtractorService,
+    private meterIdExtractor: MeterIdExtractorService,
+  ) {}
 
-  async processarDadosRecebidos(rawData: IncomingData) {
-    this.logger.log('Processando dados recebidos do medidor...');
+  /**
+   * Extrai o IP do cliente do request (delegado para IpExtractorService)
+   */
+  extractClientIp(req: any): string {
+    return this.ipExtractor.extractClientIp(req);
+  }
+
+  /**
+   * Valida se o IP do cliente é válido (delegado para IpExtractorService)
+   */
+  isValidClientIp(ip: string): boolean {
+    return this.ipExtractor.isValidIp(ip);
+  }
+
+  /**
+   * Extrai o ID do medidor de forma padronizada (delegado para MeterIdExtractorService)
+   */
+  extractMeterIdStandardized(
+    body: any,
+    query?: any,
+    headers?: any
+  ): number | null {
+    return this.meterIdExtractor.extractMeterIdStandardized(body, query, headers);
+  }
+
+  async processarDadosRecebidos(
+    rawData: IncomingData,
+    clientIp: string,
+    meterId: number
+  ) {
+    logInfo(this.logger, 'Processando dados recebidos', {
+      clientIp,
+      meterId,
+    });
 
     try {
-      const meterId = this.extractMeterId(rawData);
-      if (!meterId) {
-        throw new Error('ID do medidor não encontrado nos dados recebidos');
+      // Validar se rawData existe
+      if (rawData === null || rawData === undefined) {
+        logWarn(this.logger, 'Dados recebidos vazios', {
+          meterId,
+          clientIp,
+        });
+        throw new BadRequestException('Dados recebidos são inválidos ou estão vazios.');
       }
 
-      const readingData = this.parseReadingData(rawData);
+      // Validar tipo de dados
+      if (typeof rawData !== 'object' || Array.isArray(rawData)) {
+        logWarn(this.logger, 'Tipo de dados inválido', {
+          type: typeof rawData,
+          isArray: Array.isArray(rawData),
+          meterId,
+        });
+        throw new BadRequestException('Dados recebidos devem ser um objeto.');
+      }
+
+      // ID já foi validado no controller (vem do header)
+      // Não precisa re-extrair nem re-validar
+      const finalMeterId: number = meterId;
+      logDebug(this.logger, 'ID confirmado para processamento', {
+        meterId: finalMeterId,
+      });
+
+      // Tentar validar dados mínimos, mas não bloquear (ID já foi encontrado no header)
+      // Se o ID foi encontrado no header, significa que o medidor está autenticado
+      try {
+        this.dataValidator.validateMeterData(rawData, clientIp);
+        logDebug(this.logger, 'Dados validados com sucesso', {
+          meterId: finalMeterId,
+        });
+      } catch (validationError) {
+        // Se a validação falhar, logar aviso mas continuar
+        // O ID sendo encontrado no header é suficiente para processar
+        logWarn(this.logger, 'Validação mínima falhou, prosseguindo com processamento', {
+          meterId: finalMeterId,
+          message: (validationError as Error).message,
+        });
+        // Não bloquear o processamento - ID no header é suficiente
+      }
+      
+      // Parse dos dados de leitura
+      const readingData = this.dataParser.parseReadingData(rawData);
+      
+      // Se conseguiu processar dados (mesmo que mínimos), marca como ONLINE
+      // O dispositivo está enviando dados, então está online
+      const deviceStatus = 'ONLINE';
       
       await this.prisma.$transaction(async (prisma) => {
-        // Criar ou atualizar dispositivo
+        // Criar ou atualizar dispositivo com status e IP
         await prisma.device.upsert({
-          where: { meterId },
-          update: {},
+          where: { meterId: finalMeterId },
+          update: {
+            status: deviceStatus,
+            ...(clientIp !== 'unknown' && { ipAddress: clientIp }),
+            updatedAt: new Date(),
+          },
           create: {
-            meterId,
-            name: `Medidor ${meterId}`,
+            meterId: finalMeterId,
+            name: `Medidor ${finalMeterId}`,
             location: null,
+            ...(clientIp !== 'unknown' && { ipAddress: clientIp }),
+            status: deviceStatus,
           },
         });
 
-        // Criar leitura
+        // Criar leitura mesmo com dados mínimos
         await prisma.reading.create({
           data: {
             ...readingData,
-            meterId,
+            meterId: finalMeterId,
           },
         });
       });
 
-      this.logger.log(`Dados processados com sucesso para medidor ${meterId}`);
-      return { message: 'Dados recebidos e processados com sucesso', meterId };
+      logInfo(this.logger, 'Dados processados com sucesso', {
+        meterId: finalMeterId,
+        status: deviceStatus,
+      });
+      return { 
+        message: 'Dados recebidos e processados com sucesso', 
+        meterId: finalMeterId,
+        status: deviceStatus,
+      };
     } catch (error) {
-      this.logger.error('Erro ao processar dados:', error);
-      throw new InternalServerErrorException('Erro interno ao processar dados');
+      logError(this.logger, 'Erro ao processar dados', error, {
+        meterId,
+        clientIp,
+      });
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      
+      // Se o erro for por falta de ID, já foi logado acima
+      // Não tentamos criar dispositivo offline pois ID é obrigatório
+      throw new InternalServerErrorException(
+        error.message || 'Erro interno ao processar dados'
+      );
     }
   }
 
-  private extractMeterId(data: IncomingData): number | null {
-    if (data.id) {
-      const id = parseInt(data.id.toString());
-      return isNaN(id) ? null : id;
-    }
-    return null;
-  }
 
-  private parseReadingData(data: IncomingData): ReadingData {
-    const fields = Object.values(data).map(v => parseFloat(v?.toString() || '0'));
+  /**
+   * Processa dados recebidos em formato de texto separado por dois pontos (:)
+   * Formato esperado: hora:minuto:segundo:pa:pb:pc:pt:qa:qb:qc:qt:epa_c:epb_c:epc_c:ept_c:epa_g:epb_g:epc_g:ept_g:iarms:ibrms:icrms:uarms:ubrms:ucrms:pfa:pfb:pfc:pft
+   * Valores devem ser divididos por 100 (duas casas decimais de precisão)
+   */
+
+  /**
+   * Processa múltiplas linhas de dados em formato texto
+   */
+  async processarDadosTexto(
+    textData: string,
+    clientIp: string,
+    meterId: number,
+    baseDate?: Date
+  ) {
+    logInfo(this.logger, 'Processando dados texto', {
+      clientIp,
+      meterId,
+    });
+
+    if (!textData || typeof textData !== 'string') {
+      throw new BadRequestException('Dados de texto inválidos.');
+    }
+
+    // Separar linhas
+    const lines = textData.split('\n').filter(line => line.trim().length > 0);
     
-    return {
-      timestamp: new Date(),
-      pa: this.parseNumeric(fields[1]),
-      pb: this.parseNumeric(fields[2]),
-      pc: this.parseNumeric(fields[3]),
-      pt: this.parseNumeric(fields[4]),
-      qa: this.parseNumeric(fields[5]),
-      qb: this.parseNumeric(fields[6]),
-      qc: this.parseNumeric(fields[7]),
-      qt: this.parseNumeric(fields[8]),
-      epa_c: this.parseNumeric(fields[9]),
-      epb_c: this.parseNumeric(fields[10]),
-      epc_c: this.parseNumeric(fields[11]),
-      ept_c: this.parseNumeric(fields[12]),
-      epa_g: this.parseNumeric(fields[13]),
-      epb_g: this.parseNumeric(fields[14]),
-      epc_g: this.parseNumeric(fields[15]),
-      ept_g: this.parseNumeric(fields[16]),
-      iarms: this.parseNumeric(fields[17]),
-      ibrms: this.parseNumeric(fields[18]),
-      icrms: this.parseNumeric(fields[19]),
-      uarms: this.parseNumeric(fields[20]),
-      ubrms: this.parseNumeric(fields[21]),
-      ucrms: this.parseNumeric(fields[22]),
-      pfa: this.parseNumeric(fields[23]),
-      pfb: this.parseNumeric(fields[24]),
-      pfc: this.parseNumeric(fields[25]),
-      pft: this.parseNumeric(fields[26]),
-    };
+    if (lines.length === 0) {
+      throw new BadRequestException('Nenhuma linha de dados encontrada.');
+    }
+
+    logDebug(this.logger, 'Quantidade de linhas recebidas', {
+      meterId,
+      lineCount: lines.length,
+    });
+
+    // ID já foi validado no controller (vem do header)
+    const finalMeterId: number = meterId;
+
+    // Parse de todas as linhas primeiro
+    const parsedReadings: Array<{ readingData: ReadingData; lineIndex: number }> = [];
+    const errors: Array<{ lineIndex: number; error: string }> = [];
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const parsed = this.dataParser.parseTextLineData(line, baseDate);
+      
+      if (!parsed) {
+        errors.push({ lineIndex: i + 1, error: 'Formato de linha inválido' });
+        continue;
+      }
+
+      parsedReadings.push({
+        readingData: parsed.readingData,
+        lineIndex: i + 1,
+      });
+    }
+
+    if (parsedReadings.length === 0) {
+      throw new BadRequestException('Nenhuma linha válida encontrada para processar.');
+    }
+
+    logInfo(this.logger, 'Resumo do parsing de linhas', {
+      meterId: finalMeterId,
+      validLines: parsedReadings.length,
+      totalLines: lines.length,
+      errors: errors.length,
+    });
+
+    // Processar em transação para melhor performance
+    try {
+      await this.prisma.$transaction(async (prisma) => {
+        // Criar ou atualizar dispositivo uma única vez com IP
+        await prisma.device.upsert({
+          where: { meterId: finalMeterId },
+          update: {
+            status: 'ONLINE',
+            ...(clientIp !== 'unknown' && { ipAddress: clientIp }),
+            updatedAt: new Date(),
+          },
+          create: {
+            meterId: finalMeterId,
+            name: `Medidor ${finalMeterId}`,
+            location: null,
+            ...(clientIp !== 'unknown' && { ipAddress: clientIp }),
+            status: 'ONLINE',
+          },
+        });
+
+        // Inserir todas as leituras de uma vez (ou em lotes se necessário)
+        const batchSize = 100;
+        for (let i = 0; i < parsedReadings.length; i += batchSize) {
+          const batch = parsedReadings.slice(i, i + batchSize);
+          
+          await prisma.reading.createMany({
+            data: batch.map(({ readingData }) => ({
+              ...readingData,
+              meterId: finalMeterId,
+            })),
+            skipDuplicates: true, // Pular duplicatas baseado em constraints únicas (se houver)
+          });
+        }
+      });
+
+      logInfo(this.logger, 'Processamento de lote concluído', {
+        meterId: finalMeterId,
+        processed: parsedReadings.length,
+        errors: errors.length,
+      });
+
+      return {
+        message: `Processados ${parsedReadings.length} de ${lines.length} linhas`,
+        processed: parsedReadings.length,
+        errors: errors.length,
+        meterId,
+        errorDetails: errors,
+      };
+    } catch (error) {
+      logError(this.logger, 'Erro ao processar dados texto em lote', error, {
+        meterId: finalMeterId,
+        clientIp,
+      });
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Erro ao processar dados de texto.');
+    }
   }
 
-  private parseNumeric(value: any): number {
-    const parsed = parseFloat(value?.toString() || '0');
-    return isNaN(parsed) ? 0 : parsed;
-  }
 
   async getLatestReading(meterId: number) {
     const device = await this.prisma.device.findUnique({
@@ -108,27 +302,49 @@ export class EletroonService {
     return device.readings[0];
   }
 
-  async getDeviceReadings(meterId: number, limit: number = 100) {
+  async getDeviceReadings(meterId: number, page: number = 1, limit: number = 100) {
     const device = await this.prisma.device.findUnique({
       where: { meterId },
-      include: { readings: { orderBy: { timestamp: 'desc' }, take: limit } },
     });
 
     if (!device) {
       throw new NotFoundException(`Medidor ${meterId} não encontrado`);
     }
 
-    if (!device.readings || device.readings.length === 0) {
-      return [];
-    }
+    const skip = (page - 1) * limit;
 
-    return device.readings;
+    const [readings, total] = await Promise.all([
+      this.prisma.reading.findMany({
+        where: { meterId },
+        orderBy: { timestamp: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.reading.count({
+        where: { meterId },
+      }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data: readings,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrevious: page > 1,
+      },
+    };
   }
 
   async getDeviceReadingsByPeriod(
     meterId: number,
     startDate?: Date,
     endDate?: Date,
+    page: number = 1,
     limit: number = 1000,
   ) {
     const device = await this.prisma.device.findUnique({
@@ -151,34 +367,72 @@ export class EletroonService {
       }
     }
 
-    const readings = await this.prisma.reading.findMany({
-      where,
-      orderBy: { timestamp: 'asc' },
-      take: limit,
-    });
+    const skip = (page - 1) * limit;
 
-    return readings;
+    const [readings, total] = await Promise.all([
+      this.prisma.reading.findMany({
+        where,
+        orderBy: { timestamp: 'asc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.reading.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data: readings,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrevious: page > 1,
+      },
+    };
   }
 
-  async listarDevices() {
+  async listarDevices(page: number = 1, limit: number = 10) {
     try {
-      const devices = await this.prisma.device.findMany({
-        select: {
-          meterId: true,
-          name: true,
-          location: true,
-          createdAt: true,
-          updatedAt: true,
-          _count: {
-            select: { readings: true },
-          },
-        },
-        orderBy: { meterId: 'asc' },
-      });
+      const skip = (page - 1) * limit;
 
-      return devices;
+      const [devices, total] = await Promise.all([
+        this.prisma.device.findMany({
+          select: {
+            meterId: true,
+            name: true,
+            location: true,
+            status: true,
+            createdAt: true,
+            updatedAt: true,
+            _count: {
+              select: { readings: true },
+            },
+          },
+          orderBy: { meterId: 'asc' },
+          skip,
+          take: limit,
+        }),
+        this.prisma.device.count(),
+      ]);
+
+      const totalPages = Math.ceil(total / limit);
+
+      return {
+        data: devices,
+        meta: {
+          page,
+          limit,
+          total,
+          totalPages,
+          hasNext: page < totalPages,
+          hasPrevious: page > 1,
+        },
+      };
     } catch (error) {
-      this.logger.error('Falha ao listar devices', error.stack);
+      logError(this.logger, 'Falha ao listar devices', error);
       throw new InternalServerErrorException('Erro interno ao listar devices.');
     }
   }
@@ -192,6 +446,13 @@ export class EletroonService {
     if (!meterIds || meterIds.length === 0) {
       return [];
     }
+
+    logInfo(this.logger, 'Buscando leituras para múltiplos dispositivos', {
+      meterIds: meterIds.length,
+      limit,
+      startDate: startDate?.toISOString(),
+      endDate: endDate?.toISOString(),
+    });
 
     const where: any = {
       meterId: { in: meterIds },
@@ -212,6 +473,46 @@ export class EletroonService {
       orderBy: { timestamp: 'asc' },
       take: limit,
     });
+
+    logDebug(this.logger, 'Resumo da consulta de leituras', {
+      returned: readings.length,
+      meterIds: meterIds.length,
+    });
+    if (readings.length > 0) {
+      const first = readings[0];
+      const last = readings[readings.length - 1];
+      const timeSpan = last.timestamp.getTime() - first.timestamp.getTime();
+      const hours = timeSpan / (1000 * 60 * 60);
+
+      logDebug(this.logger, 'Faixa temporal das leituras', {
+        firstTimestamp: first.timestamp.toISOString(),
+        lastTimestamp: last.timestamp.toISOString(),
+        hours: Number.isFinite(hours) ? hours.toFixed(2) : undefined,
+      });
+
+      const eptCValues = readings.map((r) => r.ept_c);
+      const uniqueValues = [...new Set(eptCValues)];
+
+      if (uniqueValues.length === 1) {
+        logWarn(this.logger, 'Valores de energia acumulada constantes', {
+          value: eptCValues[0],
+          registros: readings.length,
+        });
+      } else {
+        const sortedValues = uniqueValues.sort((a, b) => a - b);
+        const diff = sortedValues[sortedValues.length - 1] - sortedValues[0];
+        logDebug(this.logger, 'Amplitude de energia acumulada', {
+          diff,
+          registros: readings.length,
+        });
+      }
+
+      if (hours < 1) {
+        logWarn(this.logger, 'Dados com menos de uma hora de histórico', {
+          hours: hours.toFixed(2),
+        });
+      }
+    }
 
     return readings;
   }
@@ -340,28 +641,52 @@ export class EletroonService {
     };
   }
 
-  async listarDevicesDoUsuario(userId: number) {
+  async listarDevicesDoUsuario(userId: number, page: number = 1, limit: number = 10) {
     try {
-      const devices = await this.prisma.device.findMany({
-        where: {
-          userId,
-        },
-        select: {
-          meterId: true,
-          name: true,
-          location: true,
-          createdAt: true,
-          updatedAt: true,
-          _count: {
-            select: { readings: true },
-          },
-        },
-        orderBy: { meterId: 'asc' },
-      });
+      const skip = (page - 1) * limit;
 
-      return devices;
+      const [devices, total] = await Promise.all([
+        this.prisma.device.findMany({
+          where: {
+            userId,
+          },
+          select: {
+            meterId: true,
+            name: true,
+            location: true,
+            status: true,
+            createdAt: true,
+            updatedAt: true,
+            _count: {
+              select: { readings: true },
+            },
+          },
+          orderBy: { meterId: 'asc' },
+          skip,
+          take: limit,
+        }),
+        this.prisma.device.count({
+          where: { userId },
+        }),
+      ]);
+
+      const totalPages = Math.ceil(total / limit);
+
+      return {
+        data: devices,
+        meta: {
+          page,
+          limit,
+          total,
+          totalPages,
+          hasNext: page < totalPages,
+          hasPrevious: page > 1,
+        },
+      };
     } catch (error) {
-      this.logger.error('Falha ao listar devices do usuário', error.stack);
+      logError(this.logger, 'Falha ao listar devices do usuário', error, {
+        userId,
+      });
       throw new InternalServerErrorException('Erro interno ao listar devices do usuário.');
     }
   }

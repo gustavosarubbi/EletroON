@@ -9,10 +9,8 @@ import {
   TrendingUp,
   Calendar,
   Clock,
-  RefreshCw,
   Wifi,
   WifiOff,
-  Activity,
   Gauge,
   Database,
   AlertCircle,
@@ -67,7 +65,7 @@ const RoomChartsPage: React.FC = () => {
   
   // Visualização
   const [expandedChart, setExpandedChart] = useState<string | null>(null);
-  const [selectedMetrics] = useState<string[]>(['pt', 'qt', 'ept_c', 'iarms']);
+  const [selectedMetrics] = useState<string[]>(['pt', 'gasto_total', 'import_consumption', 'generation_total']);
 
   // Configurações de métricas
   const metricsConfig: MetricConfig[] = [
@@ -80,16 +78,32 @@ const RoomChartsPage: React.FC = () => {
       icon: Zap
     },
     {
-      key: 'qt',
-      label: 'Energia Reativa Total',
-      keys: ['qt', 'qa', 'qb', 'qc'],
-      colors: ['rgba(139, 92, 246, 0.8)', 'rgba(239, 68, 68, 0.6)', 'rgba(34, 197, 94, 0.6)', 'rgba(251, 191, 36, 0.6)'],
-      unit: 'kVAR',
-      icon: Activity
+      key: 'gasto_total',
+      label: 'Consumo Líquido',
+      keys: ['gasto_total'],
+      colors: ['rgba(59, 130, 246, 0.8)'],
+      unit: 'kWh',
+      icon: TrendingUp
+    },
+    {
+      key: 'import_consumption',
+      label: 'Consumo da Rede',
+      keys: ['import_consumption'],
+      colors: ['rgba(34, 197, 94, 0.8)'],
+      unit: 'kWh',
+      icon: Database
+    },
+    {
+      key: 'generation_total',
+      label: 'Geração Própria',
+      keys: ['generation_total'],
+      colors: ['rgba(249, 115, 22, 0.85)'],
+      unit: 'kWh',
+      icon: Zap
     },
     {
       key: 'ept_c',
-      label: 'Energia Ativa Acumulada',
+      label: 'Total Acumulado',
       keys: ['ept_c', 'epa_c', 'epb_c', 'epc_c'],
       colors: ['rgba(34, 197, 94, 0.8)', 'rgba(239, 68, 68, 0.6)', 'rgba(34, 197, 94, 0.6)', 'rgba(251, 191, 36, 0.6)'],
       unit: 'kWh',
@@ -235,6 +249,50 @@ const RoomChartsPage: React.FC = () => {
         2000
       );
 
+      // Debug: Log dos dados recebidos
+      console.log('🔍 DEBUG - Carregamento de dados:');
+      console.log('  Período selecionado:', timeRange);
+      console.log('  Data início:', startDate.toISOString());
+      console.log('  Data fim:', endDate.toISOString());
+      console.log('  Dispositivos selecionados:', selectedDeviceIds);
+      console.log('  Total de leituras retornadas:', readingsData.length);
+
+      if (readingsData.length > 0) {
+        console.log('  Primeira leitura:', {
+          timestamp: readingsData[0].timestamp,
+          ept_c: readingsData[0].ept_c,
+          pt: readingsData[0].pt,
+          meterId: readingsData[0].meterId
+        });
+        console.log('  Última leitura:', {
+          timestamp: readingsData[readingsData.length - 1].timestamp,
+          ept_c: readingsData[readingsData.length - 1].ept_c,
+          pt: readingsData[readingsData.length - 1].pt,
+          meterId: readingsData[readingsData.length - 1].meterId
+        });
+        
+        // Verificar se há variação nos valores
+        const eptCValues = readingsData.map(r => r.ept_c);
+        const uniqueEptC = [...new Set(eptCValues)];
+        console.log('  Valores únicos de ept_c:', uniqueEptC.length, 'de', readingsData.length);
+        console.log('  Primeiro ept_c:', eptCValues[0]);
+        console.log('  Último ept_c:', eptCValues[eptCValues.length - 1]);
+        console.log('  Diferença:', eptCValues[eptCValues.length - 1] - eptCValues[0]);
+        
+        // Verificar timestamps
+        const timestamps = readingsData.map(r => new Date(r.timestamp));
+        const timeSpan = timestamps[timestamps.length - 1].getTime() - timestamps[0].getTime();
+        const hours = timeSpan / (1000 * 60 * 60);
+        console.log('  Intervalo de tempo (horas):', hours.toFixed(2));
+        
+        if (hours < 1) {
+          console.warn('  ⚠️ ATENÇÃO: Dados têm menos de 1 hora de histórico!');
+          console.warn('  Por isso, os valores de 1h e 24h serão iguais.');
+        }
+      } else {
+        console.warn('  ⚠️ Nenhuma leitura encontrada no período!');
+      }
+
       setReadings(readingsData);
       aggregateReadings(readingsData);
     } catch (err) {
@@ -246,8 +304,29 @@ const RoomChartsPage: React.FC = () => {
   };
 
   const aggregateReadings = (readingsData: Reading[]) => {
+    if (readingsData.length === 0) {
+      setAggregatedReadings([]);
+      return;
+    }
+
+    // Agrupar leituras por dispositivo (meterId) primeiro
+    const readingsByDevice: { [meterId: number]: Reading[] } = {};
+    readingsData.forEach(reading => {
+      if (!readingsByDevice[reading.meterId]) {
+        readingsByDevice[reading.meterId] = [];
+      }
+      readingsByDevice[reading.meterId].push(reading);
+    });
+
+    // Ordenar leituras de cada dispositivo por timestamp
+    Object.keys(readingsByDevice).forEach(meterId => {
+      readingsByDevice[Number(meterId)].sort((a, b) => 
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+      );
+    });
+
+    // Agrupar por timestamp para agregação final
     const groupedByTimestamp: { [key: string]: Reading[] } = {};
-    
     readingsData.forEach(reading => {
       const timestamp = new Date(reading.timestamp).toISOString();
       if (!groupedByTimestamp[timestamp]) {
@@ -256,22 +335,162 @@ const RoomChartsPage: React.FC = () => {
       groupedByTimestamp[timestamp].push(reading);
     });
 
-    const aggregated: AggregatedData[] = Object.keys(groupedByTimestamp)
-      .sort()
-      .map(timestamp => {
-        const readingsAtTime = groupedByTimestamp[timestamp];
-        const aggregated: AggregatedData = { timestamp };
+    // Calcular o primeiro valor de ept_c para cada dispositivo (valor base do período)
+    const firstEptCByDevice: { [meterId: number]: number } = {};
+    const firstEptGByDevice: { [meterId: number]: number } = {};
+    Object.keys(readingsByDevice).forEach(meterId => {
+      const deviceReadings = readingsByDevice[Number(meterId)];
+      if (deviceReadings.length > 0) {
+        // Pegar o primeiro valor de ept_c deste dispositivo no período
+        firstEptCByDevice[Number(meterId)] = deviceReadings[0].ept_c ?? 0;
+        firstEptGByDevice[Number(meterId)] = deviceReadings[0].ept_g ?? 0;
+      }
+    });
+
+    // Campos que nunca devem ser negativos
+    const nonNegativeFields = [
+      'epa_c', 'epb_c', 'epc_c', 'ept_c',
+      'epa_g', 'epb_g', 'epc_g', 'ept_g',
+      'iarms', 'ibrms', 'icrms',
+      'uarms', 'ubrms', 'ucrms',
+      'import_consumption', 'generation_total'
+    ];
+
+    // Criar um mapa de última leitura conhecida por dispositivo até cada timestamp
+    const timestamps = Object.keys(groupedByTimestamp).sort();
+    const lastReadingByDeviceUntilTimestamp: { [timestamp: string]: { [meterId: number]: Reading } } = {};
+    
+    // Para cada timestamp, encontrar a última leitura conhecida de cada dispositivo
+    timestamps.forEach((timestamp) => {
+      const currentTime = new Date(timestamp).getTime();
+      lastReadingByDeviceUntilTimestamp[timestamp] = {};
+      
+      Object.keys(readingsByDevice).forEach(meterIdStr => {
+        const meterId = Number(meterIdStr);
+        const deviceReadings = readingsByDevice[meterId];
         
-        metricsConfig.forEach(metric => {
-          metric.keys.forEach(key => {
-            aggregated[key] = readingsAtTime.reduce((sum, r) => {
-              return sum + ((r as any)[key] || 0);
-            }, 0);
-          });
-        });
+        // Encontrar a última leitura deste dispositivo até este timestamp (inclusive)
+        let lastReading: Reading | null = null;
+        for (const reading of deviceReadings) {
+          const readingTime = new Date(reading.timestamp).getTime();
+          if (readingTime <= currentTime) {
+            lastReading = reading;
+          } else {
+            break;
+          }
+        }
         
-        return aggregated;
+        if (lastReading) {
+          lastReadingByDeviceUntilTimestamp[timestamp][meterId] = lastReading;
+        }
       });
+    });
+
+    const aggregated: AggregatedData[] = timestamps.map((timestamp, timestampIndex) => {
+      const readingsAtTime = groupedByTimestamp[timestamp];
+      const aggregated: AggregatedData = { timestamp };
+      const lastReadingsMap = lastReadingByDeviceUntilTimestamp[timestamp];
+      
+      const energyTotals = (() => {
+        if (timestampIndex === 0) {
+          return {
+            import: 0,
+            generation: 0,
+            net: 0,
+          };
+        }
+
+        let totalImport = 0;
+        let totalGeneration = 0;
+
+        Object.keys(lastReadingsMap).forEach(meterIdStr => {
+          const meterId = Number(meterIdStr);
+          const lastReading = lastReadingsMap[meterId];
+          const firstImport = firstEptCByDevice[meterId];
+          const firstGeneration = firstEptGByDevice[meterId] ?? 0;
+
+          if (firstImport === undefined || !lastReading) {
+            return;
+          }
+
+          const currentImport = lastReading.ept_c ?? firstImport;
+          const currentGeneration = lastReading.ept_g ?? firstGeneration;
+
+          let importDelta = currentImport - firstImport;
+          let generationDelta = currentGeneration - firstGeneration;
+
+          const hasGenerationEvidence =
+            generationDelta > 0 || (lastReading.pt ?? 0) < 0;
+
+          const importReset =
+            firstImport > 0 &&
+            currentImport >= 0 &&
+            currentImport < firstImport * 0.1;
+
+          const generationReset =
+            firstGeneration > 0 &&
+            currentGeneration >= 0 &&
+            currentGeneration < firstGeneration * 0.1;
+
+          if (importDelta < 0) {
+            if (importReset && !hasGenerationEvidence) {
+              importDelta = 0;
+            } else if (!hasGenerationEvidence) {
+              importDelta = 0;
+            } else {
+              importDelta = 0;
+            }
+          }
+
+          if (generationDelta < 0) {
+            if (generationReset) {
+              generationDelta = 0;
+            } else {
+              generationDelta = 0;
+            }
+          }
+
+          totalImport += Math.max(0, importDelta);
+          totalGeneration += Math.max(0, generationDelta);
+        });
+
+        return {
+          import: totalImport,
+          generation: totalGeneration,
+          net: totalImport - totalGeneration,
+        };
+      })();
+
+      aggregated['gasto_total'] = energyTotals.net;
+      aggregated['import_consumption'] = energyTotals.import;
+      aggregated['generation_total'] = energyTotals.generation;
+
+      metricsConfig.forEach(metric => {
+        if (['gasto_total', 'import_consumption', 'generation_total'].includes(metric.key)) {
+          return;
+        }
+
+        metric.keys.forEach(key => {
+          const actualKey = key;
+
+          const sum = readingsAtTime.reduce((acc, r) => {
+            const value = (r as any)[actualKey] || 0;
+            if ((nonNegativeFields.includes(key) || nonNegativeFields.includes(actualKey)) && value < 0) {
+              console.warn(`Valor negativo detectado para ${key}: ${value}. Corrigindo para 0.`);
+              return acc + 0;
+            }
+            return acc + value;
+          }, 0);
+
+          aggregated[key] =
+            nonNegativeFields.includes(key) || nonNegativeFields.includes(actualKey)
+              ? Math.max(0, sum)
+              : sum;
+        });
+      });
+
+      return aggregated;
+    });
 
     setAggregatedReadings(aggregated);
   };
@@ -372,14 +591,142 @@ const RoomChartsPage: React.FC = () => {
       };
     }
 
+    // Campos que nunca devem ser negativos
+    const nonNegativeFields = [
+      'epa_c', 'epb_c', 'epc_c', 'ept_c',
+      'epa_g', 'epb_g', 'epc_g', 'ept_g',
+      'iarms', 'ibrms', 'icrms',
+      'uarms', 'ubrms', 'ucrms',
+      'import_consumption', 'generation_total'
+    ];
+
     const labels = dataSource.map(r => formatDateShort(r.timestamp));
     const datasets = metric.keys.map((key, index) => {
-      const data = dataSource.map(r => (r as any)[key] || 0);
-      const label = selectedDeviceIds.length > 1 
-        ? `${key.toUpperCase()} (Total)` 
-        : metric.keys.length > 1 
-          ? key.toUpperCase() 
-          : metric.label;
+      let data: number[];
+      
+      // Se a métrica for 'gasto_total', calcular consumo incremental (sempre começando em 0)
+      // Nota: metric.key é 'gasto_total', mas metric.keys é ['ept_c'], então verificamos metric.key
+      if (metric.key === 'gasto_total') {
+        if (dataSource.length === 0) {
+          data = [];
+        } else if (selectedDeviceIds.length > 1) {
+          data = dataSource.map((r, idx) => (idx === 0 ? 0 : ((r as any).gasto_total ?? 0)));
+        } else {
+          const firstImport = dataSource[0]?.ept_c ?? 0;
+          const firstGeneration = dataSource[0]?.ept_g ?? 0;
+
+          data = dataSource.map((r, idx) => {
+            if (idx === 0) return 0;
+
+            const currentImport = r.ept_c ?? firstImport;
+            const currentGeneration = r.ept_g ?? firstGeneration;
+            let importDelta = currentImport - firstImport;
+            let generationDelta = currentGeneration - firstGeneration;
+
+            const hasGenerationEvidence =
+              generationDelta > 0 || (r.pt ?? 0) < 0;
+
+            const importReset =
+              firstImport > 0 &&
+              currentImport >= 0 &&
+              currentImport < firstImport * 0.1;
+
+            const generationReset =
+              firstGeneration > 0 &&
+              currentGeneration >= 0 &&
+              currentGeneration < firstGeneration * 0.1;
+
+            if (importDelta < 0 && (!hasGenerationEvidence || importReset)) {
+              importDelta = 0;
+            }
+
+            if (generationDelta < 0 && generationReset) {
+              generationDelta = 0;
+            }
+
+            importDelta = Math.max(0, importDelta);
+            generationDelta = Math.max(0, generationDelta);
+
+            return importDelta - generationDelta;
+          });
+        }
+      } else if (metric.key === 'import_consumption') {
+        if (dataSource.length === 0) {
+          data = [];
+        } else if (selectedDeviceIds.length > 1) {
+          data = dataSource.map((r, idx) => (idx === 0 ? 0 : Math.max(0, (r as any).import_consumption ?? 0)));
+        } else {
+          const firstImport = dataSource[0]?.ept_c ?? 0;
+
+          data = dataSource.map((r, idx) => {
+            if (idx === 0) return 0;
+
+            const currentImport = r.ept_c ?? firstImport;
+            let importDelta = currentImport - firstImport;
+
+            const importReset =
+              firstImport > 0 &&
+              currentImport >= 0 &&
+              currentImport < firstImport * 0.1;
+
+            if (importDelta < 0 && importReset) {
+              importDelta = 0;
+            }
+
+            return Math.max(0, importDelta);
+          });
+        }
+      } else if (metric.key === 'generation_total') {
+        if (dataSource.length === 0) {
+          data = [];
+        } else if (selectedDeviceIds.length > 1) {
+          data = dataSource.map((r, idx) => (idx === 0 ? 0 : Math.max(0, (r as any).generation_total ?? 0)));
+        } else {
+          const firstGeneration = dataSource[0]?.ept_g ?? 0;
+
+          data = dataSource.map((r, idx) => {
+            if (idx === 0) return 0;
+
+            const currentGeneration = r.ept_g ?? firstGeneration;
+            let generationDelta = currentGeneration - firstGeneration;
+
+            const generationReset =
+              firstGeneration > 0 &&
+              currentGeneration >= 0 &&
+              currentGeneration < firstGeneration * 0.1;
+
+            if (generationDelta < 0 && generationReset) {
+              generationDelta = 0;
+            }
+
+            return Math.max(0, generationDelta);
+          });
+        }
+      } else {
+        // Para outras métricas, usar valores diretos
+        const actualKey = key;
+        data = dataSource.map(r => {
+          const value = (r as any)[actualKey] || 0;
+          // Garantir que valores de energia, corrente e tensão nunca sejam negativos
+          if (nonNegativeFields.includes(key) || nonNegativeFields.includes(actualKey)) {
+            const correctedValue = Math.max(0, value);
+            if (value < 0) {
+              console.warn(`Valor negativo corrigido no gráfico para ${key}: ${value} -> ${correctedValue}`);
+            }
+            return correctedValue;
+          }
+          return value;
+        });
+      }
+      
+      // Usar o label da métrica se for 'gasto_total', senão usar o nome do campo
+      const label = metric.key === 'gasto_total' 
+        ? metric.label
+        : selectedDeviceIds.length > 1 
+          ? `${key.toUpperCase()}` 
+          : metric.keys.length > 1 
+            ? key.toUpperCase() 
+            : metric.label;
 
       return {
         label,
@@ -397,15 +744,134 @@ const RoomChartsPage: React.FC = () => {
     return { labels, datasets };
   };
 
-  const getCurrentValue = (key: string): number => {
+  const getCurrentValue = (key: string, metricKey?: string): number => {
     const dataSource = selectedDeviceIds.length > 1 ? aggregatedReadings : readings;
     if (!dataSource || dataSource.length === 0) return 0;
+    
+    // Consumo líquido agregado
+    if (metricKey === 'gasto_total' || key === 'gasto_total') {
+      if (selectedDeviceIds.length > 1) {
+        const lastReading = aggregatedReadings[aggregatedReadings.length - 1];
+        return (lastReading as any)?.gasto_total ?? 0;
+      }
+
+      if (readings.length < 2) {
+        return 0;
+      }
+
+      const firstImport = readings[0]?.ept_c ?? 0;
+      const firstGeneration = readings[0]?.ept_g ?? 0;
+      const lastReading = readings[readings.length - 1];
+      const currentImport = lastReading?.ept_c ?? firstImport;
+      const currentGeneration = lastReading?.ept_g ?? firstGeneration;
+
+      let importDelta = currentImport - firstImport;
+      let generationDelta = currentGeneration - firstGeneration;
+
+      const hasGenerationEvidence =
+        generationDelta > 0 || (lastReading?.pt ?? 0) < 0;
+
+      const importReset =
+        firstImport > 0 &&
+        currentImport >= 0 &&
+        currentImport < firstImport * 0.1;
+
+      const generationReset =
+        firstGeneration > 0 &&
+        currentGeneration >= 0 &&
+        currentGeneration < firstGeneration * 0.1;
+
+      if (importDelta < 0 && (!hasGenerationEvidence || importReset)) {
+        importDelta = 0;
+      }
+
+      if (generationDelta < 0 && generationReset) {
+        generationDelta = 0;
+      }
+
+      importDelta = Math.max(0, importDelta);
+      generationDelta = Math.max(0, generationDelta);
+
+      return importDelta - generationDelta;
+    }
+
+    if (metricKey === 'import_consumption' || key === 'import_consumption') {
+      if (selectedDeviceIds.length > 1) {
+        const lastReading = aggregatedReadings[aggregatedReadings.length - 1];
+        return Math.max(0, (lastReading as any)?.import_consumption ?? 0);
+      }
+
+      if (readings.length < 2) {
+        return 0;
+      }
+
+      const firstImport = readings[0]?.ept_c ?? 0;
+      const lastReading = readings[readings.length - 1];
+      const currentImport = lastReading?.ept_c ?? firstImport;
+
+      let importDelta = currentImport - firstImport;
+      const importReset =
+        firstImport > 0 &&
+        currentImport >= 0 &&
+        currentImport < firstImport * 0.1;
+
+      if (importDelta < 0 && importReset) {
+        importDelta = 0;
+      }
+
+      return Math.max(0, importDelta);
+    }
+
+    if (metricKey === 'generation_total' || key === 'generation_total') {
+      if (selectedDeviceIds.length > 1) {
+        const lastReading = aggregatedReadings[aggregatedReadings.length - 1];
+        return Math.max(0, (lastReading as any)?.generation_total ?? 0);
+      }
+
+      if (readings.length < 2) {
+        return 0;
+      }
+
+      const firstGeneration = readings[0]?.ept_g ?? 0;
+      const lastReading = readings[readings.length - 1];
+      const currentGeneration = lastReading?.ept_g ?? firstGeneration;
+
+      let generationDelta = currentGeneration - firstGeneration;
+      const generationReset =
+        firstGeneration > 0 &&
+        currentGeneration >= 0 &&
+        currentGeneration < firstGeneration * 0.1;
+
+      if (generationDelta < 0 && generationReset) {
+        generationDelta = 0;
+      }
+
+      return Math.max(0, generationDelta);
+    }
+    
+    // Para outras métricas, usar o valor atual
     const lastReading = dataSource[dataSource.length - 1];
-    return (lastReading as any)[key] || 0;
+    const actualKey = key;
+    const value = (lastReading as any)[actualKey] || 0;
+    
+    // Campos que nunca devem ser negativos
+    const nonNegativeFields = [
+      'epa_c', 'epb_c', 'epc_c', 'ept_c',
+      'epa_g', 'epb_g', 'epc_g', 'ept_g',
+      'iarms', 'ibrms', 'icrms',
+      'uarms', 'ubrms', 'ucrms'
+    ];
+    
+    // Garantir que valores de energia, corrente e tensão nunca sejam negativos
+    if (nonNegativeFields.includes(key) || nonNegativeFields.includes(actualKey)) {
+      return Math.max(0, value);
+    }
+    
+    return value;
   };
 
   const getStatCard = (metric: MetricConfig) => {
-    const value = getCurrentValue(metric.keys[0]);
+    const value = getCurrentValue(metric.keys[0], metric.key);
     const Icon = metric.icon;
     
     return (
@@ -415,7 +881,7 @@ const RoomChartsPage: React.FC = () => {
         </div>
         <div className="stat-card-content">
           <div className="stat-card-label">
-            {metric.label} {selectedDeviceIds.length > 1 ? '(Total)' : ''}
+            {metric.label}
           </div>
           <div className="stat-card-value">
             {value.toFixed(2)} <span className="stat-card-unit">{metric.unit}</span>
@@ -439,7 +905,7 @@ const RoomChartsPage: React.FC = () => {
           <div className="chart-card-title">
             <Icon size={20} />
             <h3>
-              {metric.label} {selectedDeviceIds.length > 1 ? '(Total Agregado)' : ''}
+              {metric.label}
             </h3>
           </div>
           <div className="chart-card-actions">

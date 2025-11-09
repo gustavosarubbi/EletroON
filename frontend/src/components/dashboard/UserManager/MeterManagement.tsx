@@ -12,10 +12,7 @@ import {
   Unlink,
   Clock,
   ChevronRight,
-  ChevronDown,
-  Filter,
-  User,
-  Mail
+  ChevronDown
 } from 'lucide-react';
 import { UserData } from './types';
 

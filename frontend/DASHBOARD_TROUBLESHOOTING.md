@@ -60,6 +60,18 @@ npm run dev
 2. Verificar se não há erros de TypeScript
 3. Usar dados mock para testar
 
+### **Problema: Gráfico mostra etiqueta “Estimado”**
+**Soluções:**
+1. Verificar se o medidor enviou leituras de energia (`ept_c` / `ept_g`) no período
+2. Confirmar se não houve reset do medidor (queda superior a 90% no acumulado)
+3. Validar se há leituras de potência (`pt`) suficientes para a estimativa
+
+### **Problema: Valores negativos no gráfico**
+**Soluções:**
+1. Valores negativos em consumo líquido indicam exportação de energia — comportamento esperado
+2. Se não houver geração no local, revise os dados do medidor para possíveis resets
+3. Verifique os logs do backend para identificar ajustes aplicados
+
 ## 📁 Arquivos Modificados
 
 ### **Componentes:**
@@ -106,6 +118,8 @@ npm run dev
 - "Carregando dados do dashboard..." - Confirma que está tentando carregar dados
 - "Usando dados mock:" - Confirma que está usando dados de exemplo
 - "Dados reais carregados:" - Confirma se a API está funcionando
+- "Consumo das últimas 24h estimado via potência" - Indica períodos calculados com fallback
+- "Valores de energia negativos recebidos..." - Informa que o parser manteve valores negativos para análise
 
 ### **Verificações:**
 1. **Console do navegador:** Verificar erros JavaScript

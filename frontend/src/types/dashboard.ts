@@ -74,6 +74,27 @@ export interface DashboardStats {
   lastUpdate?: string;
 }
 
+export type DataReliability = 'measured' | 'estimated' | 'no-data';
+
+export interface ConsumptionSummary {
+  hour: string;
+  consumption: number;
+  netConsumption: number;
+  importConsumption: number;
+  generation: number;
+  reliability?: DataReliability;
+}
+
+export interface WeeklySummary {
+  day: string;
+  consumption: number;
+  netConsumption: number;
+  importConsumption: number;
+  generation: number;
+  count: number;
+  reliability?: DataReliability;
+}
+
 export interface ChartData {
   labels: string[];
   datasets: Array<{

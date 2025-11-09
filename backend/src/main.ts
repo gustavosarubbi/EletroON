@@ -1,6 +1,10 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import * as express from 'express';
 import * as net from 'net';
 
 /**
@@ -35,34 +39,142 @@ async function findAvailablePort(startPort: number, maxAttempts: number = 10): P
       return port;
     }
     
-    console.log(`⚠️  Porta ${port} ocupada, tentando ${port + 1}...`);
+    // Porta ocupada, tentar próxima
   }
   
   throw new Error(`Não foi possível encontrar uma porta disponível após ${maxAttempts} tentativas`);
 }
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  
+  const logger = new Logger('Bootstrap');
+  const app = await NestFactory.create(AppModule, {
+    rawBody: true,
+  });
+
+  const textMiddleware = express.text({
+    type: (req) => {
+      const contentType = req.headers['content-type'] || '';
+      if (!contentType) {
+        return req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH';
+      }
+      return (
+        contentType.includes('text/plain') ||
+        contentType.includes('application/octet-stream')
+      );
+    },
+    limit: '10mb',
+  });
+
+  app.use('/api/eletroon/medidor', textMiddleware);
+
+  try {
+    const helmet = await import('helmet');
+    app.use(helmet.default({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          scriptSrc: ["'self'"],
+          imgSrc: ["'self'", 'data:', 'https:'],
+        },
+      },
+      crossOriginEmbedderPolicy: false,
+    }));
+    logger.log('Helmet configurado com sucesso');
+  } catch (error) {
+    logger.warn('Helmet não disponível, pulando configuração de segurança');
+  }
+
   // Configurar CORS
   const corsOrigins = process.env.CORS_ORIGINS;
   const origin = corsOrigins === '*' ? true : corsOrigins?.split(',') || ['http://localhost:3001', 'http://localhost:3004'];
   
+  // Configurar CORS - Permitir todos os headers customizados
+  const allowedHeaders = [
+    'Content-Type',
+    'Authorization', 
+    'X-Requested-With',
+    'x-meter-id',
+    'x-device-id',
+    'meter-id',
+    'device-id',
+    'X-Meter-Id',
+    'X-Device-Id',
+    'Meter-Id',
+    'Device-Id',
+    'X-METER-ID',
+    'X-DEVICE-ID',
+    'METER-ID',
+    'DEVICE-ID',
+    // Permitir qualquer header customizado
+  ];
+  
   app.enableCors({
     origin: origin,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    allowedHeaders: allowedHeaders,
+    exposedHeaders: allowedHeaders,
     credentials: true,
+    // Permitir headers customizados
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
   });
 
   // Configurar prefixo global
   app.setGlobalPrefix('api');
 
-  // Configurar validação global
+  // Configurar Exception Filters globais
+  app.useGlobalFilters(new AllExceptionsFilter(), new HttpExceptionFilter());
+
+  // Configurar Interceptors globais
+  app.useGlobalInterceptors(new LoggingInterceptor());
+
+  // Configurar Swagger (se disponível)
+  try {
+    const { DocumentBuilder, SwaggerModule } = await import('@nestjs/swagger');
+    const config = new DocumentBuilder()
+      .setTitle('EletroON API')
+      .setDescription('API para monitoramento de medidores de energia')
+      .setVersion('1.0')
+      .addBearerAuth(
+        {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          name: 'JWT',
+          description: 'Enter JWT token',
+          in: 'header',
+        },
+        'JWT-auth',
+      )
+      .addTag('Meters', 'Endpoints para receber e consultar dados de medidores')
+      .addTag('Auth', 'Endpoints de autenticação')
+      .addTag('Users', 'Endpoints de usuários')
+      .addTag('Admin', 'Endpoints administrativos')
+      .build();
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api/docs', app, document, {
+      swaggerOptions: {
+        persistAuthorization: true,
+      },
+    });
+    logger.log('Swagger configurado em /api/docs');
+  } catch (error) {
+    logger.warn('Swagger não disponível, pulando configuração');
+  }
+
+  // Configurar validação global - MAS permitir headers customizados
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
-    forbidNonWhitelisted: true,
+    forbidNonWhitelisted: false, // Mudado para false para não bloquear headers customizados
     transform: true,
+    transformOptions: {
+      enableImplicitConversion: true,
+    },
+    // Não validar headers customizados
+    skipMissingProperties: false,
+    skipNullProperties: false,
+    skipUndefinedProperties: false,
   }));
 
   const requestedPort = parseInt(process.env.PORT || '3000', 10);
@@ -73,14 +185,14 @@ async function bootstrap() {
     port = await findAvailablePort(requestedPort);
     
     if (port !== requestedPort) {
-      console.log(`ℹ️  Porta ${requestedPort} ocupada, usando porta ${port} automaticamente`);
+      logger.warn(`Porta ${requestedPort} ocupada, usando porta ${port} automaticamente`);
     }
     
     await app.listen(port);
-    console.log(`🚀 Aplicação rodando na porta ${port}`);
-    console.log(`📡 API disponível em: http://localhost:${port}/api`);
+    logger.log(`Aplicação rodando na porta ${port}`);
+    logger.log(`API disponível em: http://localhost:${port}/api`);
   } catch (error) {
-    console.error('❌ Erro ao iniciar a aplicação:', error);
+    logger.error('Erro ao iniciar a aplicação:', error);
     process.exit(1);
   }
 }

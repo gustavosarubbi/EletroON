@@ -24,7 +24,9 @@ import {
   LayoutDashboard,
   ChevronRight,
   FileText,
-  FileJson
+  FileJson,
+  Search,
+  X
 } from 'lucide-react';
 import '../styles/components/RoomCharts.css';
 import '../styles/components/Dashboard.css';
@@ -49,7 +51,7 @@ const RoomChartsPage: React.FC = () => {
   
   // Estados principais
   const [devices, setDevices] = useState<Device[]>([]);
-  const [selectedRoom, setSelectedRoom] = useState<string>('all'); // 'all' ou nome da sala
+  const [selectedRoom, setSelectedRoom] = useState<string>(''); // Nome da sala selecionada
   const [selectedDeviceIds, setSelectedDeviceIds] = useState<number[]>([]);
   const [readings, setReadings] = useState<Reading[]>([]);
   const [aggregatedReadings, setAggregatedReadings] = useState<AggregatedData[]>([]);
@@ -57,6 +59,9 @@ const RoomChartsPage: React.FC = () => {
   const [loadingReadings, setLoadingReadings] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Busca de salas
+  const [roomSearchTerm, setRoomSearchTerm] = useState<string>('');
   
   // Filtros de tempo
   const [timeRange, setTimeRange] = useState<'1h' | '24h' | '7d' | '30d' | 'custom'>('24h');
@@ -135,11 +140,20 @@ const RoomChartsPage: React.FC = () => {
     }
   ];
 
-  // Agrupar dispositivos por sala
+  // Agrupar dispositivos por sala do usuário
+  // A sala vem do usuário associado ao medidor (device.user), não do location do device
   const roomsMap = useMemo(() => {
     const map = new Map<string, Device[]>();
     devices.forEach(device => {
-      const room = device.location || 'Sem Localização';
+      // A sala é definida pelo usuário associado ao medidor
+      // Se o medidor está associado a um usuário com sala, usar a sala do usuário
+      // Caso contrário, pular (medidores sem usuário ou usuários sem sala não aparecem)
+      if (!device.user || !device.user.room) {
+        return; // Medidores sem usuário ou usuários sem sala não são exibidos
+      }
+      
+      const room = device.user.room;
+      
       if (!map.has(room)) {
         map.set(room, []);
       }
@@ -152,12 +166,21 @@ const RoomChartsPage: React.FC = () => {
     return Array.from(roomsMap.keys()).sort();
   }, [roomsMap]);
 
-  const devicesByRoom = useMemo(() => {
-    if (selectedRoom === 'all') {
-      return devices;
+  // Filtrar salas baseado no termo de busca
+  const filteredRoomsList = useMemo(() => {
+    if (!roomSearchTerm.trim()) {
+      return roomsList;
     }
+    const searchLower = roomSearchTerm.toLowerCase().trim();
+    return roomsList.filter(room => 
+      room.toLowerCase().includes(searchLower)
+    );
+  }, [roomsList, roomSearchTerm]);
+
+  const devicesByRoom = useMemo(() => {
+    // Removido 'all' - sempre retorna dispositivos da sala selecionada
     return roomsMap.get(selectedRoom) || [];
-  }, [selectedRoom, roomsMap, devices]);
+  }, [selectedRoom, roomsMap]);
 
   // Carregar dispositivos
   useEffect(() => {
@@ -166,21 +189,14 @@ const RoomChartsPage: React.FC = () => {
 
   // Atualizar medidores selecionados quando mudar a sala
   useEffect(() => {
-    if (selectedRoom === 'all') {
-      // Se selecionar "Todas as Salas", selecionar todos os dispositivos
-      if (devices.length > 0) {
-        setSelectedDeviceIds(devices.map(d => d.meterId));
-      }
+    // Sempre selecionar todos os medidores da sala selecionada
+    const roomDevices = roomsMap.get(selectedRoom) || [];
+    if (roomDevices.length > 0) {
+      setSelectedDeviceIds(roomDevices.map(d => d.meterId));
     } else {
-      // Se selecionar uma sala específica, selecionar todos os medidores daquela sala
-      const roomDevices = roomsMap.get(selectedRoom) || [];
-      if (roomDevices.length > 0) {
-        setSelectedDeviceIds(roomDevices.map(d => d.meterId));
-      } else {
-        setSelectedDeviceIds([]);
-      }
+      setSelectedDeviceIds([]);
     }
-  }, [selectedRoom, devices, roomsMap]);
+  }, [selectedRoom, roomsMap]);
 
   // Carregar leituras quando dispositivos ou período mudarem
   useEffect(() => {
@@ -199,13 +215,45 @@ const RoomChartsPage: React.FC = () => {
       const devicesData = await dashboardService.getDevices();
       setDevices(devicesData);
       
-      // Selecionar "Todas as Salas" por padrão
-      if (devicesData.length > 0) {
-        setSelectedRoom('all');
+      // Selecionar primeira sala disponível por padrão
+      // Apenas medidores associados a usuários com sala definida
+      const roomsWithDevices = new Map<string, Device[]>();
+      devicesData.forEach(device => {
+        if (device.user?.room) {
+          const room = device.user.room;
+          if (!roomsWithDevices.has(room)) {
+            roomsWithDevices.set(room, []);
+          }
+          roomsWithDevices.get(room)!.push(device);
+        }
+      });
+      
+      const rooms = Array.from(roomsWithDevices.keys()).sort();
+      
+      // Selecionar primeira sala apenas se não houver uma sala já selecionada
+      if (rooms.length > 0) {
+        if (!selectedRoom || !rooms.includes(selectedRoom)) {
+          setSelectedRoom(rooms[0]);
+        }
+      } else {
+        // Se não há salas, limpar seleção
+        setSelectedRoom('');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao carregar dispositivos:', err);
-      setError('Erro ao carregar dispositivos. Verifique a conexão com a API.');
+      
+      // Mensagem de erro mais específica
+      if (err?.message) {
+        setError(err.message);
+      } else if (err?.response?.status === 401) {
+        setError('Sessão expirada. Por favor, faça login novamente.');
+      } else if (err?.response?.status === 404) {
+        setError('Endpoint não encontrado. Verifique se o backend está configurado corretamente.');
+      } else if (err?.request) {
+        setError('Não foi possível conectar à API. Verifique se o backend está rodando e acessível.');
+      } else {
+        setError('Erro ao carregar dispositivos. Verifique a conexão com a API.');
+      }
     } finally {
       setLoading(false);
     }
@@ -988,93 +1036,214 @@ const RoomChartsPage: React.FC = () => {
       <div className="dashboard-page-content">
         {/* Controles Principais - Reorganizados com melhor UX */}
         <div className="room-controls-container">
-          {/* Seção: Seleção de Salas e Medidores */}
+          {/* Seção: Seleção de Salas e Medidores - Redesenhada */}
           <div className="controls-section selection-section">
             <h2 className="section-title-enhanced">
               <Building2 size={20} />
               Salas e Medidores
             </h2>
             
-            <div className="control-card unified-selection-card">
-              <div className="unified-selection-header">
-                <div className="selection-controls-row">
-                  <div className="room-select-wrapper">
-                    <label className="selection-label">
-                      <Building2 size={16} />
-                      Sala
-                    </label>
-                    <select
-                      className="room-select-unified"
-                      value={selectedRoom}
-                      onChange={(e) => setSelectedRoom(e.target.value)}
-                      disabled={loading}
-                    >
-                      <option value="all">Todas as Salas</option>
-                      {roomsList.map(room => (
-                        <option key={room} value={room}>
-                          {room} ({roomsMap.get(room)?.length || 0} medidores)
-                        </option>
-                      ))}
-                    </select>
+            {/* Container Principal com Layout em Duas Colunas */}
+            <div className="room-selection-container">
+              {/* Painel de Salas */}
+              <div className="rooms-panel">
+                <div className="rooms-panel-header">
+                  <h3 className="panel-title">
+                    <Building2 size={18} />
+                    Selecionar Sala
+                  </h3>
+                  <div className="rooms-count-badge">
+                    {roomsList.length} sala{roomsList.length !== 1 ? 's' : ''}
                   </div>
-                  
-                  {selectedDeviceIds.length > 0 && (
-                    <div className="selection-summary">
-                      <span className="selection-summary-text">
-                        {selectedDeviceIds.length} medidor{selectedDeviceIds.length > 1 ? 'es' : ''} selecionado{selectedDeviceIds.length > 1 ? 's' : ''}
-                      </span>
+                </div>
+                
+                {/* Campo de Busca de Salas */}
+                {roomsList.length > 0 && (
+                  <div className="rooms-search-wrapper">
+                    <div className="rooms-search-input-wrapper">
+                      <Search size={16} className="rooms-search-icon" />
+                      <input
+                        type="text"
+                        className="rooms-search-input"
+                        placeholder={roomsList.length > 5 ? "Buscar sala..." : "Filtrar salas..."}
+                        value={roomSearchTerm}
+                        onChange={(e) => setRoomSearchTerm(e.target.value)}
+                        disabled={loading}
+                      />
+                      {roomSearchTerm && (
+                        <button
+                          className="rooms-search-clear"
+                          onClick={() => setRoomSearchTerm('')}
+                          type="button"
+                          title="Limpar busca"
+                        >
+                          <X size={16} />
+                        </button>
+                      )}
+                    </div>
+                    {roomSearchTerm && (
+                      <div className="rooms-search-results">
+                        {filteredRoomsList.length > 0 ? (
+                          <span className="rooms-search-results-text">
+                            {filteredRoomsList.length} sala{filteredRoomsList.length !== 1 ? 's' : ''} encontrada{filteredRoomsList.length !== 1 ? 's' : ''}
+                          </span>
+                        ) : (
+                          <span className="rooms-search-results-text no-results">
+                            Nenhuma sala encontrada
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                <div className="rooms-grid">
+                  {/* Cards de Salas - Filtradas pela busca */}
+                  {filteredRoomsList.length > 0 ? (
+                    filteredRoomsList.map(room => {
+                      const roomDevices = roomsMap.get(room) || [];
+                      const isSelected = selectedRoom === room;
+                      const selectedCount = roomDevices.filter(d => selectedDeviceIds.includes(d.meterId)).length;
+                      
+                      return (
+                        <button
+                          key={room}
+                          className={`room-card ${isSelected ? 'active' : ''}`}
+                          onClick={() => setSelectedRoom(room)}
+                          disabled={loading}
+                        >
+                          <div className="room-card-icon">
+                            <LayoutDashboard size={24} />
+                          </div>
+                          <div className="room-card-content">
+                            <div className="room-card-name">{room}</div>
+                            <div className="room-card-meta">
+                              <span className="room-card-devices-count">
+                                {roomDevices.length} medidor{roomDevices.length !== 1 ? 'es' : ''}
+                              </span>
+                              {isSelected && selectedCount > 0 && (
+                                <span className="room-card-selected-count">
+                                  {selectedCount} selecionado{selectedCount !== 1 ? 's' : ''}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          {isSelected && (
+                            <div className="room-card-check">
+                              <CheckSquare size={20} />
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })
+                  ) : roomSearchTerm ? (
+                    <div className="rooms-empty-search">
+                      <Search size={32} />
+                      <p>Nenhuma sala encontrada para "{roomSearchTerm}"</p>
+                      <button
+                        className="rooms-clear-search-btn"
+                        onClick={() => setRoomSearchTerm('')}
+                      >
+                        Limpar busca
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="rooms-empty-search">
+                      <Building2 size={32} />
+                      <p>Nenhuma sala disponível</p>
+                      <small>Associe usuários a medidores para criar salas</small>
                     </div>
                   )}
                 </div>
               </div>
 
-              <div className="devices-list-wrapper">
-                <div className="devices-list-header">
-                  <button
-                    className="devices-select-all-btn"
-                    onClick={handleSelectAllDevices}
-                    disabled={devicesByRoom.length === 0}
-                  >
-                    {selectedDeviceIds.length === devicesByRoom.length ? (
-                      <>
-                        <CheckSquare size={16} />
-                        Desmarcar Todos
-                      </>
-                    ) : (
-                      <>
-                        <Square size={16} />
-                        Selecionar Todos ({devicesByRoom.length})
-                      </>
+              {/* Painel de Medidores */}
+              <div className="meters-panel">
+                <div className="meters-panel-header">
+                  <div className="meters-panel-title-group">
+                    <h3 className="panel-title">
+                      <Gauge size={18} />
+                      Medidores da Sala
+                    </h3>
+                    {selectedRoom && (
+                      <span className="selected-room-name">{selectedRoom}</span>
                     )}
-                  </button>
+                  </div>
+                  <div className="meters-panel-actions">
+                    <button
+                      className="meters-select-all-btn"
+                      onClick={handleSelectAllDevices}
+                      disabled={devicesByRoom.length === 0 || loading}
+                    >
+                      {selectedDeviceIds.length === devicesByRoom.length && devicesByRoom.length > 0 ? (
+                        <>
+                          <CheckSquare size={16} />
+                          Desmarcar Todos
+                        </>
+                      ) : (
+                        <>
+                          <Square size={16} />
+                          Selecionar Todos
+                        </>
+                      )}
+                    </button>
+                    {selectedDeviceIds.length > 0 && (
+                      <div className="meters-selection-badge">
+                        {selectedDeviceIds.length} selecionado{selectedDeviceIds.length !== 1 ? 's' : ''}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="devices-list-scroll">
+
+                <div className="meters-grid">
                   {devicesByRoom.length === 0 ? (
-                    <div className="devices-empty-state">
-                      <Database size={32} />
-                      <p>Nenhum medidor encontrado</p>
+                    <div className="meters-empty-state">
+                      <Database size={48} />
+                      <h4>Nenhum medidor encontrado</h4>
+                      <p>
+                        {selectedRoom 
+                          ? `Não há medidores associados à sala "${selectedRoom}".`
+                          : 'Selecione uma sala para ver os medidores.'}
+                      </p>
                     </div>
                   ) : (
-                    devicesByRoom.map(device => (
-                      <label key={device.meterId} className="device-checkbox-item">
-                        <input
-                          type="checkbox"
-                          checked={selectedDeviceIds.includes(device.meterId)}
-                          onChange={() => handleDeviceToggle(device.meterId)}
-                          disabled={loading}
-                        />
-                        <div className="device-checkbox-content">
-                          <span className="device-checkbox-name">{device.name}</span>
-                          <div className="device-checkbox-meta">
-                            <span className={`device-status-badge-item ${device.status === 'ONLINE' ? 'online' : 'offline'}`}>
-                              {device.status === 'ONLINE' ? <Wifi size={12} /> : <WifiOff size={12} />}
-                              {device.status}
-                            </span>
-                            <span className="device-id-label">ID: {device.meterId}</span>
+                    devicesByRoom.map(device => {
+                      const isSelected = selectedDeviceIds.includes(device.meterId);
+                      const isOnline = device.status === 'ONLINE';
+                      
+                      return (
+                        <div
+                          key={device.meterId}
+                          className={`meter-card ${isSelected ? 'selected' : ''} ${!isOnline ? 'offline' : ''}`}
+                          onClick={() => handleDeviceToggle(device.meterId)}
+                        >
+                          <div className="meter-card-checkbox">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => handleDeviceToggle(device.meterId)}
+                              disabled={loading}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </div>
+                          <div className="meter-card-content">
+                            <div className="meter-card-header">
+                              <div className="meter-card-name">{device.name}</div>
+                              <div className={`meter-card-status ${isOnline ? 'online' : 'offline'}`}>
+                                {isOnline ? <Wifi size={14} /> : <WifiOff size={14} />}
+                                <span>{device.status}</span>
+                              </div>
+                            </div>
+                            <div className="meter-card-footer">
+                              <span className="meter-card-id">ID: {device.meterId}</span>
+                              {device.location && (
+                                <span className="meter-card-location">{device.location}</span>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </label>
-                    ))
+                      );
+                    })
                   )}
                 </div>
               </div>
@@ -1180,6 +1349,14 @@ const RoomChartsPage: React.FC = () => {
           <div className="room-charts-error">
             <AlertCircle size={20} />
             <span>{error}</span>
+            <button
+              className="error-retry-btn"
+              onClick={loadDevices}
+              disabled={loading}
+              title="Tentar novamente"
+            >
+              Tentar Novamente
+            </button>
           </div>
         )}
 
@@ -1200,14 +1377,14 @@ const RoomChartsPage: React.FC = () => {
                 <div className="device-info-main">
                   <div className="device-selection-summary">
                     <h3>
-                      {selectedRoom === 'all' 
-                        ? `Todas as Salas - ${selectedDeviceIds.length} Medidores`
-                        : `${selectedRoom} - ${selectedDeviceIds.length} Medidor${selectedDeviceIds.length > 1 ? 'es' : ''}`}
+                      {selectedRoom 
+                        ? `${selectedRoom} - ${selectedDeviceIds.length} Medidor${selectedDeviceIds.length > 1 ? 'es' : ''}`
+                        : 'Nenhuma sala selecionada'}
                     </h3>
                     <p>
-                      {selectedRoom === 'all' 
-                        ? `Visualizando todos os medidores do sistema`
-                        : `Medidores selecionados: ${selectedDeviceIds.join(', ')}`}
+                      {selectedRoom 
+                        ? `Medidores da sala: ${selectedDeviceIds.join(', ')}`
+                        : 'Selecione uma sala para visualizar os medidores'}
                     </p>
                   </div>
                 </div>

@@ -28,7 +28,6 @@ interface UserToolbarProps {
   onRefresh: () => void;
   onExport: (format: 'csv' | 'json') => void;
   onAddUser: () => void;
-  onManageMeters: () => void;
 }
 
 const UserToolbar: React.FC<UserToolbarProps> = ({
@@ -44,7 +43,6 @@ const UserToolbar: React.FC<UserToolbarProps> = ({
   onRefresh,
   onExport,
   onAddUser,
-  onManageMeters,
 }) => {
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState<{ top: number; right: number } | null>(null);
@@ -208,13 +206,6 @@ const UserToolbar: React.FC<UserToolbarProps> = ({
           title="Atualizar"
         >
           <RefreshCw size={18} />
-        </button>
-
-        <button
-          className="action-btn manage-meters"
-          onClick={onManageMeters}
-        >
-          <span>Gerenciar Medidores</span>
         </button>
 
         <button

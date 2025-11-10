@@ -5,7 +5,8 @@ import {
   X,
   Power,
   LayoutDashboard,
-  BarChart3
+  BarChart3,
+  Zap
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -96,6 +97,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isVisible, onClose }) => {
             >
               <BarChart3 size={20} />
               <span>Gráfico das Salas</span>
+            </div>
+            <div 
+              className={`dashboard-nav-item ${isActive('/admin/medidores') ? 'active' : ''}`}
+              onClick={() => handleNavigation('/admin/medidores')}
+            >
+              <Zap size={20} />
+              <span>Gerenciamento de Medidores</span>
             </div>
           </div>
         </nav>

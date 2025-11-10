@@ -19,16 +19,71 @@ const api = axios.create({
   },
 });
 
+// Função auxiliar para verificar se o token é válido
+function isTokenValid(token: string): boolean {
+  if (!token) return false;
+  
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const currentTime = Math.floor(Date.now() / 1000);
+    return payload.exp && payload.exp > currentTime;
+  } catch (error) {
+    return false;
+  }
+}
+
 // Interceptor para adicionar token em todas as requisições
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
-    if (token) {
+    if (token && isTokenValid(token)) {
       config.headers.Authorization = `Bearer ${token}`;
+    } else if (token && !isTokenValid(token)) {
+      // Token inválido ou expirado - limpar e deixar a requisição falhar
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
     }
     return config;
   },
   (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Interceptor para tratar erros de resposta
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Tratar diferentes tipos de erro
+    if (error.response) {
+      // Erro de resposta do servidor
+      const status = error.response.status;
+      const message = error.response.data?.message || error.response.data?.error || 'Erro desconhecido';
+      
+      if (status === 401) {
+        // Token inválido ou expirado
+        console.error('🔒 Token inválido ou expirado');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        // Redirecionar para login se não estiver na página de login
+        if (!window.location.pathname.includes('/login')) {
+          window.location.href = '/login';
+        }
+      } else if (status === 403) {
+        console.error('🚫 Acesso negado');
+      } else if (status === 404) {
+        console.error('❌ Endpoint não encontrado:', error.config?.url);
+      } else if (status >= 500) {
+        console.error('🔥 Erro no servidor:', message);
+      }
+    } else if (error.request) {
+      // Requisição feita mas sem resposta (erro de rede)
+      console.error('🌐 Erro de conexão com a API:', error.message);
+    } else {
+      // Erro ao configurar a requisição
+      console.error('⚠️ Erro ao configurar requisição:', error.message);
+    }
+    
     return Promise.reject(error);
   }
 );
@@ -48,11 +103,42 @@ export const dashboardService = {
   // Listar todos os dispositivos
   async getDevices(): Promise<Device[]> {
     try {
+      // Verificar token antes de fazer a requisição
+      const token = localStorage.getItem('token');
+      if (!token || !isTokenValid(token)) {
+        throw new Error('Token inválido ou expirado. Faça login novamente.');
+      }
+
       const response = await api.get('/admin/devices');
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao buscar dispositivos:', error);
-      throw error;
+      
+      // Tratamento específico de erros
+      if (error.response) {
+        const status = error.response.status;
+        const message = error.response.data?.message || error.response.data?.error;
+        
+        if (status === 401) {
+          throw new Error('Sessão expirada. Por favor, faça login novamente.');
+        } else if (status === 403) {
+          throw new Error('Você não tem permissão para acessar os dispositivos.');
+        } else if (status === 404) {
+          throw new Error('Endpoint de dispositivos não encontrado. Verifique se o backend está configurado corretamente.');
+        } else if (status >= 500) {
+          throw new Error('Erro no servidor ao buscar dispositivos. Tente novamente mais tarde.');
+        } else if (message) {
+          throw new Error(message);
+        }
+      } else if (error.request) {
+        // Erro de rede (sem resposta do servidor)
+        throw new Error('Não foi possível conectar à API. Verifique se o backend está rodando e acessível.');
+      } else if (error.message) {
+        // Erro de validação ou outro erro conhecido
+        throw error;
+      }
+      
+      throw new Error('Erro desconhecido ao buscar dispositivos. Verifique a conexão com a API.');
     }
   },
 
@@ -245,6 +331,58 @@ export const dashboardService = {
       return response.data;
     } catch (error) {
       console.error('Erro ao buscar logs de atividade:', error);
+      throw error;
+    }
+  },
+
+  // Deletar usuário
+  async deleteUser(userId: number): Promise<void> {
+    try {
+      await api.delete(`/admin/users/${userId}`);
+    } catch (error) {
+      console.error('Erro ao deletar usuário:', error);
+      throw error;
+    }
+  },
+
+  // Associar dispositivo a usuário
+  async associateMeterToUser(meterId: number, userId: number): Promise<void> {
+    try {
+      await api.post(`/admin/devices/${meterId}/associate`, { userId });
+    } catch (error) {
+      console.error('Erro ao associar medidor:', error);
+      throw error;
+    }
+  },
+
+  // Desassociar dispositivo de usuário
+  async disassociateMeterFromUser(meterId: number): Promise<void> {
+    try {
+      await api.patch(`/admin/devices/${meterId}/disassociate`);
+    } catch (error) {
+      console.error('Erro ao desassociar medidor:', error);
+      throw error;
+    }
+  },
+
+  // Criar usuário
+  async createUser(email: string, password: string, role: string = 'USER', room?: string): Promise<User> {
+    try {
+      const response = await api.post('/admin/users', { email, password, role, room });
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao criar usuário:', error);
+      throw error;
+    }
+  },
+
+  // Atualizar usuário
+  async updateUser(userId: number, email?: string, password?: string, room?: string): Promise<User> {
+    try {
+      const response = await api.patch(`/admin/users/${userId}`, { email, password, room });
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao atualizar usuário:', error);
       throw error;
     }
   },

@@ -49,10 +49,6 @@ $ pnpm install
    PORT=3000
    NODE_ENV=development
    CORS_ORIGINS=*
-   DEFAULT_ADMIN_EMAIL=admin@eletroon.com
-   DEFAULT_ADMIN_PASSWORD=admin123
-   DEFAULT_USER_EMAIL=usuario@eletroon.com
-   DEFAULT_USER_PASSWORD=User@123
    ```
 
 3. **Configure o banco de dados**:

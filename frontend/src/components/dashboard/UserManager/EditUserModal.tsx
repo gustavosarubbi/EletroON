@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Mail, Lock, Save } from 'lucide-react';
+import { X, Mail, Lock, Save, Building2 } from 'lucide-react';
 import { UserData, EditUserData } from './types';
 
 interface EditUserModalProps {
@@ -11,7 +11,8 @@ interface EditUserModalProps {
 const EditUserModal: React.FC<EditUserModalProps> = ({ user, onSave, onClose }) => {
   const [formData, setFormData] = useState<EditUserData>({
     email: user.email,
-    password: ''
+    password: '',
+    room: user.room || ''
   });
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -152,6 +153,24 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, onSave, onClose }) 
                   {formData.password.length}/{MIN_PASSWORD_LENGTH} caracteres mínimos
                 </span>
               )}
+            </div>
+
+            <div className="form-group-modern">
+              <label htmlFor="edit-room">
+                <Building2 size={14} />
+                <span>Sala</span>
+                <span className="optional-label">(opcional)</span>
+              </label>
+              <input
+                id="edit-room"
+                type="text"
+                value={formData.room || ''}
+                onChange={(e) => setFormData({ ...formData, room: e.target.value })}
+                placeholder="Ex: Sala 101, Laboratório A, etc."
+              />
+              <span className="help-text">
+                Ao alterar a sala, todos os medidores associados terão sua localização atualizada
+              </span>
             </div>
           </div>
 

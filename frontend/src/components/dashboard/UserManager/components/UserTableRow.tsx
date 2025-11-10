@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Mail, Clock, Zap, Edit3, Trash2, Eye, EyeOff, CheckSquare, Square, X } from 'lucide-react';
+import { Mail, Clock, Zap, Edit3, Trash2, Eye, EyeOff, CheckSquare, Square, X, Building2 } from 'lucide-react';
 import { UserData } from '../types';
 
 interface UserTableRowProps {
@@ -156,6 +156,18 @@ const UserTableRow: React.FC<UserTableRowProps> = ({
           <div className={`role-badge-table ${user.role}`} role="status" aria-label={`Tipo: ${user.role === 'admin' ? 'Administrador' : 'Usuário'}`}>
             {user.role === 'admin' ? 'Administrador' : 'Usuário'}
           </div>
+        </div>
+      </td>
+      <td className="table-room-column">
+        <div className="table-cell-item">
+          {user.room ? (
+            <div className="table-cell-room" title={user.room}>
+              <Building2 size={16} aria-hidden="true" />
+              <span className="table-cell-text">{user.room}</span>
+            </div>
+          ) : (
+            <span className="table-cell-empty">—</span>
+          )}
         </div>
       </td>
       <td className="table-devices-column">

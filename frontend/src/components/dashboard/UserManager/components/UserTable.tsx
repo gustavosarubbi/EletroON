@@ -67,7 +67,7 @@ const UserTable: React.FC<UserTableProps> = ({
             ))
           ) : (
             <tr>
-              <td colSpan={7} className="table-empty">
+              <td colSpan={8} className="table-empty">
                 <div className="empty-state">
                   <Search size={64} />
                   <h4>Nenhum usuário encontrado</h4>

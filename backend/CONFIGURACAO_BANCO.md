@@ -118,7 +118,5 @@ Após configurar o banco de dados:
    pnpm start:dev
    ```
 
-3. Os usuários padrão serão criados automaticamente na primeira inicialização:
-   - Admin: `admin@eletroon.com` / `admin123`
-   - Usuário: `usuario@eletroon.com` / `User@123`
+3. Crie usuários através da API ou interface administrativa conforme necessário.
 

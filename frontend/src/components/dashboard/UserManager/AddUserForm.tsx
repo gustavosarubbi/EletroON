@@ -1,5 +1,5 @@
 import React from 'react';
-import { Mail, Lock, User, X, CheckCircle2, UserPlus } from 'lucide-react';
+import { Mail, Lock, User, X, CheckCircle2, UserPlus, Building2 } from 'lucide-react';
 import { NewUserForm } from './types';
 
 interface AddUserFormProps {
@@ -65,6 +65,25 @@ const AddUserForm: React.FC<AddUserFormProps> = ({
             <option value="user">Usuário Regular</option>
             <option value="admin">Administrador</option>
           </select>
+        </div>
+        <div className="form-group">
+          <label>
+            <Building2 size={16} />
+            Sala {newUser.role === 'user' && <span className="required-asterisk">*</span>}
+          </label>
+          <input
+            type="text"
+            value={newUser.room || ''}
+            onChange={(e) => onUserChange({ ...newUser, room: e.target.value })}
+            placeholder="Ex: Sala 101, Laboratório A, etc."
+            required={newUser.role === 'user'}
+            disabled={newUser.role === 'admin'}
+          />
+          <small className="form-hint">
+            {newUser.role === 'admin' 
+              ? 'Administradores não precisam de sala associada'
+              : 'A sala será associada a todos os medidores deste usuário. Obrigatório para usuários regulares.'}
+          </small>
         </div>
         <div className="form-actions">
           <button className="btn-primary btn-save" onClick={onSave}>

@@ -4,7 +4,6 @@ import { useUserManager } from './hooks/useUserManager';
 import UserStats from './UserStats';
 import UserToolbar from './UserToolbar';
 import AddUserForm from './AddUserForm';
-import MeterManagement from './MeterManagement';
 import MetersModal from './MetersModal';
 import EditUserModal from './EditUserModal';
 import DeleteConfirmModal from './DeleteConfirmModal';
@@ -20,7 +19,6 @@ const UserManager: React.FC = () => {
     loading,
     hasError,
     showAddForm,
-    showMeterManagement,
     selectedUserId,
     editingUserId,
     showPasswords,
@@ -58,7 +56,6 @@ const UserManager: React.FC = () => {
     togglePasswordVisibility,
     // Setters
     setShowAddForm,
-    setShowMeterManagement,
     setSelectedUserId,
     setSearchQuery,
     setFilterRole,
@@ -96,7 +93,7 @@ const UserManager: React.FC = () => {
       </div>
 
       {/* Toolbar */}
-      {!showAddForm && !showMeterManagement && (
+      {!showAddForm && (
         <UserToolbar
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
@@ -111,11 +108,6 @@ const UserManager: React.FC = () => {
           onExport={handleExport}
           onAddUser={() => {
             setShowAddForm(true);
-            setShowMeterManagement(false);
-          }}
-          onManageMeters={() => {
-            setShowMeterManagement(true);
-            setShowAddForm(false);
           }}
         />
       )}
@@ -130,18 +122,8 @@ const UserManager: React.FC = () => {
         />
       )}
 
-      {/* Gerenciamento de Medidores */}
-      {showMeterManagement && (
-        <MeterManagement
-          regularUsers={regularUsers}
-          onAssociateMeter={handleAssociateMeter}
-          onDisassociateMeter={handleDisassociateMeter}
-          onClose={() => setShowMeterManagement(false)}
-        />
-      )}
-
       {/* Lista de Usuários - Vista em Tabela */}
-      {!showAddForm && !showMeterManagement && viewMode === 'table' && (
+      {!showAddForm && viewMode === 'table' && (
         <UserTable
           users={paginatedUsers}
           selectedUsers={selectedUsers}
@@ -162,7 +144,7 @@ const UserManager: React.FC = () => {
       )}
 
       {/* Lista de Usuários - Vista em Grid */}
-      {!showAddForm && !showMeterManagement && viewMode === 'grid' && (
+      {!showAddForm && viewMode === 'grid' && (
         <UserGridView
           users={paginatedUsers}
           selectedUsers={selectedUsers}

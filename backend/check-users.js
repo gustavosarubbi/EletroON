@@ -26,9 +26,7 @@ async function checkUsers() {
 
     if (users.length === 0) {
       console.log('❌ Nenhum usuário encontrado no banco de dados.');
-      console.log('\n📋 Credenciais padrão esperadas:');
-      console.log('   Admin: admin@eletroon.com / admin123');
-      console.log('   User:  usuario@eletroon.com / User@123');
+      console.log('\n💡 Crie usuários através da API ou interface administrativa.');
     } else {
       console.log(`✅ Encontrados ${users.length} usuário(s) no banco:\n`);
       users.forEach((user, index) => {
@@ -38,10 +36,6 @@ async function checkUsers() {
         console.log(`   Criado em: ${user.createdAt.toISOString()}`);
         console.log('');
       });
-      
-      console.log('\n📋 Credenciais padrão:');
-      console.log('   Admin: admin@eletroon.com / admin123');
-      console.log('   User:  usuario@eletroon.com / User@123');
     }
   } catch (error) {
     console.error('❌ Erro ao verificar usuários:', error);

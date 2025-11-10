@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Delete, Post, Patch, Param, Body, UseGuards, Request } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AdminService } from './admin.service';
 import type { AuthenticatedUser } from '../types/common.types';
@@ -41,5 +41,54 @@ export class AdminController {
   @UseGuards(JwtAuthGuard)
   async getActivityLogs(@Request() req: { user: AuthenticatedUser }) {
     return this.adminService.getRecentActivityLogs(5);
+  }
+
+  @Delete('users/:id')
+  @UseGuards(JwtAuthGuard)
+  async deleteUser(@Param('id') id: string, @Request() req: { user: AuthenticatedUser }) {
+    return this.adminService.deleteUser(parseInt(id));
+  }
+
+  @Post('devices/:meterId/associate')
+  @UseGuards(JwtAuthGuard)
+  async associateDeviceToUser(
+    @Param('meterId') meterId: string,
+    @Body() body: { userId: number },
+    @Request() req: { user: AuthenticatedUser }
+  ) {
+    return this.adminService.associateDeviceToUser(parseInt(meterId), body.userId);
+  }
+
+  @Patch('devices/:meterId/disassociate')
+  @UseGuards(JwtAuthGuard)
+  async disassociateDeviceFromUser(
+    @Param('meterId') meterId: string,
+    @Request() req: { user: AuthenticatedUser }
+  ) {
+    return this.adminService.disassociateDeviceFromUser(parseInt(meterId));
+  }
+
+  @Post('users')
+  @UseGuards(JwtAuthGuard)
+  async createUser(
+    @Body() body: { email: string; password: string; role?: string; room?: string },
+    @Request() req: { user: AuthenticatedUser }
+  ) {
+    return this.adminService.createUser(
+      body.email,
+      body.password,
+      body.role || 'USER',
+      body.room
+    );
+  }
+
+  @Patch('users/:id')
+  @UseGuards(JwtAuthGuard)
+  async updateUser(
+    @Param('id') id: string,
+    @Body() body: { email?: string; password?: string; room?: string },
+    @Request() req: { user: AuthenticatedUser }
+  ) {
+    return this.adminService.updateUser(parseInt(id), body.email, body.password, body.room);
   }
 }

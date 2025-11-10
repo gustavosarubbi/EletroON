@@ -978,6 +978,21 @@
   border-color: #3b82f6 !important;
 }
 
+.required-asterisk {
+  color: rgba(239, 68, 68, 0.9);
+  margin-left: 4px;
+  font-weight: 600;
+}
+
+.form-hint {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
+  line-height: 1.4;
+}
+
 .form-actions {
   display: flex;
   gap: 10px;
@@ -2291,7 +2306,8 @@
 }
 
 .table-devices-column .sort-header > svg:last-child,
-.table-date-column .sort-header > svg:last-child {
+.table-date-column .sort-header > svg:last-child,
+.table-room-column .sort-header > svg:last-child {
   margin-left: 8px;
 }
 
@@ -2338,7 +2354,8 @@
 }
 
 .table-cell-meters,
-.table-cell-date {
+.table-cell-date,
+.table-cell-room {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -2348,7 +2365,8 @@
 
 .table-cell-item .table-cell-email,
 .table-cell-item .table-cell-meters,
-.table-cell-item .table-cell-date {
+.table-cell-item .table-cell-date,
+.table-cell-item .table-cell-room {
   padding: 0;
 }
 
@@ -2360,11 +2378,21 @@
 }
 
 .table-cell-meters svg,
-.table-cell-date svg {
-  color: rgba(59, 130, 246, 0.75);
+.table-cell-date svg,
+.table-cell-room svg {
+  color: rgba(139, 92, 246, 0.75);
   flex-shrink: 0;
   width: 16px;
   height: 16px;
+}
+
+.table-cell-empty {
+  color: rgba(255, 255, 255, 0.3);
+  font-style: italic;
+}
+
+.table-room-column .sort-header > svg:last-child {
+  margin-left: 8px;
 }
 
 .role-badge-table {
@@ -2442,6 +2470,12 @@
   width: auto;
   min-width: 90px;
   max-width: 90px;
+}
+
+.users-table-modern .table-room-column {
+  width: auto;
+  min-width: 150px;
+  max-width: 150px;
 }
 
 .users-table-modern .table-devices-column {
@@ -4361,6 +4395,45 @@
   background: rgba(16, 185, 129, 0.1);
   border-color: rgba(16, 185, 129, 0.2);
   color: #34d399;
+}
+
+.meter-user-stat-badge.room {
+  background: rgba(139, 92, 246, 0.15);
+  color: rgba(139, 92, 246, 0.9);
+  border-color: rgba(139, 92, 246, 0.3);
+  text-transform: none;
+  font-weight: 500;
+}
+
+.meter-user-warning {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: rgba(251, 191, 36, 0.15);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: 8px;
+  font-size: 12px;
+  color: rgba(251, 191, 36, 0.9);
+  line-height: 1.4;
+}
+
+.meter-user-warning-text {
+  font-size: 12px;
+  color: rgba(251, 191, 36, 0.9);
+  margin-top: 8px;
+  display: block;
+}
+
+.meter-associate-btn.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: rgba(107, 114, 128, 0.15);
+  border-color: rgba(107, 114, 128, 0.3);
+  color: rgba(107, 114, 128, 0.9);
+}
+
+.meter-associate-btn.disabled:hover {
+  transform: none;
+  box-shadow: none;
 }
 
 .meter-user-card-actions {

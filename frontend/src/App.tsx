@@ -5,6 +5,7 @@ import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import UserManagementPage from './pages/UserManagementPage';
 import RoomChartsPage from './pages/RoomChartsPage';
+import MeterManagementPage from './pages/MeterManagementPage';
 import './styles/index.css';
 
 
@@ -33,6 +34,11 @@ function App() {
             <Route path="/admin/graficos-salas" element={
               <ProtectedRoute requireAdmin={true}>
                 <RoomChartsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/medidores" element={
+              <ProtectedRoute requireAdmin={true}>
+                <MeterManagementPage />
               </ProtectedRoute>
             } />
             <Route path="/" element={<Navigate to="/login" replace />} />

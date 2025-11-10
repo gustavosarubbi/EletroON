@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckSquare, Square, ChevronUp, ChevronDown, Mail, Shield, Zap, Calendar, List, Lock, Settings } from 'lucide-react';
+import { CheckSquare, Square, ChevronUp, ChevronDown, Mail, Shield, Zap, Calendar, List, Lock, Settings, Building2 } from 'lucide-react';
 import { SortConfig, SortKey } from '../types';
 
 interface UserTableHeaderProps {
@@ -83,6 +83,18 @@ const UserTableHeader: React.FC<UserTableHeaderProps> = ({
             <Shield size={14} />
             <span>Tipo</span>
             {getSortIcon('role')}
+          </div>
+        </th>
+        <th 
+          className={`table-sortable table-room-column ${sortConfig?.key === 'room' ? 'active' : ''}`}
+          onClick={() => onSort('room')}
+          role="columnheader"
+          aria-sort={sortConfig?.key === 'room' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
+        >
+          <div className="sort-header">
+            <Building2 size={14} />
+            <span>Sala</span>
+            {getSortIcon('room')}
           </div>
         </th>
         <th 

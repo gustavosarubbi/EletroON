@@ -15,12 +15,14 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { UserData } from './types';
+import { Device } from '../../../types/dashboard';
 
 interface MeterManagementProps {
   regularUsers: UserData[];
+  allDevices: Device[];
   onAssociateMeter: (userId: number, meterId: number) => void;
   onDisassociateMeter: (userId: number, meterId: number) => void;
-  onClose: () => void;
+  onClose?: () => void;
 }
 
 interface Meter {
@@ -38,6 +40,7 @@ interface Meter {
 
 const MeterManagement: React.FC<MeterManagementProps> = ({
   regularUsers,
+  allDevices,
   onAssociateMeter,
   onDisassociateMeter,
   onClose,
@@ -49,41 +52,18 @@ const MeterManagement: React.FC<MeterManagementProps> = ({
   const [selectedMeterForUser, setSelectedMeterForUser] = useState<{ userId: number; meterId: number | null } | null>(null);
   const [meterSearchQuery, setMeterSearchQuery] = useState('');
 
-  // Criar lista completa de medidores
-  const availableMeters = [401, 402, 403, 404, 405];
+  // Criar lista completa de medidores a partir dos dados reais da API
   const allMeters: Meter[] = useMemo(() => {
-    const meters: Meter[] = [];
-    
-    // Adicionar medidores associados
-    regularUsers.forEach(user => {
-      user.devices.forEach(device => {
-        meters.push({
-          id: device.meterId,
-          name: device.name,
-          location: device.location,
-          status: device.status,
-          associatedUserId: user.id,
-          associatedUserEmail: user.email,
-          lastReading: device.lastReading,
-        });
-      });
-    });
-
-    // Adicionar medidores disponíveis não associados
-    const associatedMeterIds = new Set(meters.map(m => m.id));
-    availableMeters.forEach(meterId => {
-      if (!associatedMeterIds.has(meterId)) {
-        meters.push({
-          id: meterId,
-          name: `Medidor ${meterId}`,
-          location: `Localização ${meterId}`,
-          status: 'ONLINE' as const,
-        });
-      }
-    });
-
-    return meters.sort((a, b) => a.id - b.id);
-  }, [regularUsers]);
+    return allDevices.map(device => ({
+      id: device.meterId,
+      name: device.name,
+      location: device.location,
+      status: device.status,
+      associatedUserId: device.user?.id,
+      associatedUserEmail: device.user?.email,
+      lastReading: device.lastReading || undefined,
+    })).sort((a, b) => a.id - b.id);
+  }, [allDevices]);
 
   // Filtrar usuários
   const filteredUsers = useMemo(() => {
@@ -207,15 +187,17 @@ const MeterManagement: React.FC<MeterManagementProps> = ({
 
   return (
     <div className="meter-management-container">
-      <div className="meter-management-header">
-        <div className="meter-management-title-section">
-          <Zap size={20} className="meter-management-title-icon" />
-          <h2>Gerenciamento de Medidores</h2>
+      {onClose && (
+        <div className="meter-management-header">
+          <div className="meter-management-title-section">
+            <Zap size={20} className="meter-management-title-icon" />
+            <h2>Gerenciamento de Medidores</h2>
+          </div>
+          <button className="meter-management-close-btn" onClick={onClose}>
+            <X size={20} />
+          </button>
         </div>
-        <button className="meter-management-close-btn" onClick={onClose}>
-          <X size={20} />
-        </button>
-      </div>
+      )}
 
       {/* Estatísticas Rápidas */}
       <div className="meter-stats-grid">
@@ -360,6 +342,12 @@ const MeterManagement: React.FC<MeterManagementProps> = ({
                           <div className="meter-user-info-enhanced">
                             <div className="meter-user-email-enhanced">{user.email}</div>
                             <div className="meter-user-stats">
+                              {user.room && (
+                                <span className="meter-user-stat-badge room">
+                                  <MapPin size={12} />
+                                  {user.room}
+                                </span>
+                              )}
                               <span className="meter-user-stat-badge">
                                 <Zap size={12} />
                                 {user.devices.length} medidor{user.devices.length !== 1 ? 'es' : ''}
@@ -371,10 +359,15 @@ const MeterManagement: React.FC<MeterManagementProps> = ({
                                 </span>
                               )}
                             </div>
+                            {!user.room && (
+                              <div className="meter-user-warning">
+                                ⚠️ Este usuário não possui uma sala definida. Defina uma sala antes de associar medidores.
+                              </div>
+                            )}
                           </div>
                         </div>
                         <div className="meter-user-card-actions">
-                          {availableMeters.length > 0 && (
+                          {availableMeters.length > 0 && user.room && (
                             <button
                               className="meter-associate-btn"
                               onClick={(e) => {
@@ -408,6 +401,16 @@ const MeterManagement: React.FC<MeterManagementProps> = ({
                                   <span>Associar</span>
                                 </>
                               )}
+                            </button>
+                          )}
+                          {!user.room && (
+                            <button
+                              className="meter-associate-btn disabled"
+                              disabled
+                              title="Defina uma sala para o usuário antes de associar medidores"
+                            >
+                              <MapPin size={16} />
+                              <span>Sem Sala</span>
                             </button>
                           )}
                           {isExpanded ? (
@@ -468,11 +471,11 @@ const MeterManagement: React.FC<MeterManagementProps> = ({
                           )}
 
                           {/* Medidores Disponíveis para Associar */}
-                          {isSelectingMeter && availableMeters.length > 0 && (
+                          {isSelectingMeter && user.room && availableMeters.length > 0 && (
                             <div className="meter-available-meters-section">
                               <div className="meter-section-title">
                                 <Plus size={14} />
-                                <span>Associar Medidor</span>
+                                <span>Associar Medidor à Sala: {user.room}</span>
                               </div>
                               <div className="meter-associate-search-wrapper">
                                 <Search size={14} className="meter-associate-search-icon" />
@@ -540,7 +543,11 @@ const MeterManagement: React.FC<MeterManagementProps> = ({
                             <div className="meter-user-empty-state">
                               <Zap size={32} />
                               <p>Nenhum medidor associado</p>
-                              {availableMeters.length > 0 && (
+                              {!user.room ? (
+                                <span className="meter-user-warning-text">
+                                  Defina uma sala para este usuário antes de associar medidores.
+                                </span>
+                              ) : availableMeters.length > 0 ? (
                                 <button
                                   className="meter-associate-first-btn"
                                   onClick={() => setSelectedMeterForUser({ userId: user.id, meterId: null })}
@@ -548,6 +555,8 @@ const MeterManagement: React.FC<MeterManagementProps> = ({
                                   <Plus size={14} />
                                   Associar primeiro medidor
                                 </button>
+                              ) : (
+                                <span>Todos os medidores já estão associados</span>
                               )}
                             </div>
                           )}

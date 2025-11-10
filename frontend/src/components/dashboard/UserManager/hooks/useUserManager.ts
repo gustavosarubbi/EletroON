@@ -7,7 +7,6 @@ export const useUserManager = () => {
   const [loading, setLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [showMeterManagement, setShowMeterManagement] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [editingUserId, setEditingUserId] = useState<number | null>(null);
   const [showPasswords, setShowPasswords] = useState<{ [key: number]: boolean }>({});
@@ -25,7 +24,8 @@ export const useUserManager = () => {
   const [newUser, setNewUser] = useState<NewUserForm>({ 
     email: '', 
     password: '', 
-    role: 'user' 
+    role: 'user',
+    room: ''
   });
   const [editData, setEditData] = useState<{ [key: number]: EditUserData }>({});
 
@@ -86,7 +86,7 @@ export const useUserManager = () => {
     if (user) {
       setEditData({
         ...editData,
-        [userId]: { email: user.email, password: '' }
+        [userId]: { email: user.email, password: '', room: user.room || '' }
       });
       setEditingUserId(userId);
     }
@@ -96,19 +96,15 @@ export const useUserManager = () => {
     const form = editData[userId];
     if (form && form.email) {
       try {
-        // Aqui você pode chamar uma API para salvar
-        // await dashboardService.updateUser(userId, form);
-        setUsers(users.map(user => 
-          user.id === userId 
-            ? { ...user, email: form.email, password: form.password || user.password }
-            : user
-        ));
+        await dashboardService.updateUser(userId, form.email, form.password, form.room);
+        await loadUsersData(); // Recarregar dados após atualização
         const newEditData = { ...editData };
         delete newEditData[userId];
         setEditData(newEditData);
         setEditingUserId(null);
       } catch (error) {
         console.error('Erro ao salvar usuário:', error);
+        throw error;
       }
     }
   };
@@ -125,13 +121,17 @@ export const useUserManager = () => {
     const userId = deleteConfirm.userId;
     if (userId !== null) {
       try {
-        // Aqui você pode chamar uma API para deletar
+        // Chamar API para deletar no backend
+        await dashboardService.deleteUser(userId);
+        // Atualizar estado local após sucesso
         setUsers(users.filter(user => user.id !== userId));
         if (editingUserId === userId) {
           setEditingUserId(null);
         }
       } catch (error) {
         console.error('Erro ao deletar usuário:', error);
+        // Recarregar dados em caso de erro para manter sincronização
+        await loadUsersData();
       }
     }
     setDeleteConfirm({ userId: null, isBulk: false });
@@ -142,25 +142,29 @@ export const useUserManager = () => {
   };
 
   const handleAddUser = async () => {
-    if (newUser.email && newUser.password) {
-      try {
-        const newId = users.length > 0 ? Math.max(...users.map(u => u.id)) + 1 : 1;
-        const currentTime = new Date().toISOString().split('T')[0];
-        
-        // Aqui você pode chamar uma API para criar
-        setUsers([...users, { 
-          id: newId, 
-          email: newUser.email, 
-          password: newUser.password,
-          role: newUser.role,
-          createdAt: currentTime,
-          devices: []
-        }]);
-        setNewUser({ email: '', password: '', role: 'user' });
-        setShowAddForm(false);
-      } catch (error) {
-        console.error('Erro ao adicionar usuário:', error);
-      }
+    // Validar campos obrigatórios
+    if (!newUser.email || !newUser.password) {
+      return;
+    }
+    
+    // Sala é obrigatória apenas para usuários regulares
+    if (newUser.role === 'user' && !newUser.room?.trim()) {
+      return;
+    }
+    
+    try {
+      await dashboardService.createUser(
+        newUser.email,
+        newUser.password,
+        newUser.role === 'admin' ? 'ADMIN' : 'USER',
+        newUser.role === 'admin' ? undefined : newUser.room
+      );
+      await loadUsersData(); // Recarregar dados após criação
+      setNewUser({ email: '', password: '', role: 'user', room: '' });
+      setShowAddForm(false);
+    } catch (error) {
+      console.error('Erro ao adicionar usuário:', error);
+      throw error;
     }
   };
 
@@ -220,9 +224,19 @@ export const useUserManager = () => {
         if (sortConfig.key === 'devices') {
           aValue = a.devices.length;
           bValue = b.devices.length;
+        } else if (sortConfig.key === 'room') {
+          // Tratar room (pode ser null ou undefined)
+          aValue = a.room || '';
+          bValue = b.room || '';
         } else {
           aValue = a[sortConfig.key as keyof UserData];
           bValue = b[sortConfig.key as keyof UserData];
+        }
+
+        // Comparação para strings (case-insensitive)
+        if (typeof aValue === 'string' && typeof bValue === 'string') {
+          const comparison = aValue.toLowerCase().localeCompare(bValue.toLowerCase());
+          return sortConfig.direction === 'asc' ? comparison : -comparison;
         }
 
         if (aValue < bValue) {
@@ -265,9 +279,18 @@ export const useUserManager = () => {
     setDeleteConfirm({ userId: null, isBulk: true });
   };
 
-  const confirmBulkDelete = () => {
-    setUsers(users.filter(user => !selectedUsers.includes(user.id)));
-    setSelectedUsers([]);
+  const confirmBulkDelete = async () => {
+    try {
+      // Deletar todos os usuários selecionados no backend
+      await Promise.all(selectedUsers.map(userId => dashboardService.deleteUser(userId)));
+      // Atualizar estado local após sucesso
+      setUsers(users.filter(user => !selectedUsers.includes(user.id)));
+      setSelectedUsers([]);
+    } catch (error) {
+      console.error('Erro ao deletar usuários:', error);
+      // Recarregar dados em caso de erro para manter sincronização
+      await loadUsersData();
+    }
     setDeleteConfirm({ userId: null, isBulk: false });
   };
 
@@ -323,7 +346,6 @@ export const useUserManager = () => {
     loading,
     hasError,
     showAddForm,
-    showMeterManagement,
     selectedUserId,
     editingUserId,
     showPasswords,
@@ -367,7 +389,6 @@ export const useUserManager = () => {
     toggleRowExpand,
     // Setters
     setShowAddForm,
-    setShowMeterManagement,
     setSelectedUserId,
     setEditingUserId,
     setSearchQuery,

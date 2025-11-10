@@ -6,11 +6,16 @@ export interface Device {
   location?: string;
   status: 'ONLINE' | 'OFFLINE';
   lastReadingAt?: string;
-  associated: boolean;
+  lastReading?: {
+    timestamp: string;
+    qt: number;
+  } | null;
+  associated?: boolean;
   user?: {
     id: number;
     email: string;
-  };
+    room?: string | null;
+  } | null;
 }
 
 export interface Reading {
@@ -50,6 +55,7 @@ export interface User {
   email: string;
   password?: string;
   role: string;
+  room?: string | null;
   createdAt: string;
   devices: Array<{
     meterId: number;

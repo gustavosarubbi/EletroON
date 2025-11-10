@@ -1,11 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class AdminService {
   private readonly logger = new Logger(AdminService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private usersService: UsersService
+  ) {}
 
   async getStats() {
     try {
@@ -61,6 +65,9 @@ export class AdminService {
 
   async getUsers() {
     try {
+      // Determinar tempo limite para considerar dispositivo online (últimos 5 minutos)
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+      
       const users = await this.prisma.user.findMany({
         where: {
           role: 'USER', // Apenas usuários regulares
@@ -91,20 +98,27 @@ export class AdminService {
         email: user.email,
         password: user.password, // Em produção, não retornar senha
         role: user.role.toLowerCase(),
+        room: user.room || null,
         createdAt: user.createdAt.toISOString().split('T')[0],
-        devices: user.devices.map(device => ({
-          meterId: device.meterId,
-          name: device.name,
-          location: device.location || 'Local não definido',
-          status: device.readings.length > 0 ? 'ONLINE' : 'OFFLINE',
-          lastReadingAt: device.readings.length > 0 
-            ? device.readings[0].timestamp.toLocaleString('pt-BR')
-            : 'Nunca',
-          lastReading: device.readings.length > 0 ? {
-            timestamp: device.readings[0].timestamp.toLocaleString('pt-BR'),
-            qt: device.readings[0].qt,
-          } : null,
-        })),
+        devices: user.devices.map(device => {
+          const lastReading = device.readings[0];
+          const lastReadingDate = lastReading ? lastReading.timestamp : null;
+          const isOnline = lastReadingDate && lastReadingDate >= fiveMinutesAgo;
+          
+          return {
+            meterId: device.meterId,
+            name: device.name,
+            location: device.location || 'Local não definido',
+            status: isOnline ? 'ONLINE' : 'OFFLINE',
+            lastReadingAt: lastReadingDate
+              ? lastReadingDate.toLocaleString('pt-BR')
+              : 'Nunca',
+            lastReading: lastReading ? {
+              timestamp: lastReading.timestamp.toLocaleString('pt-BR'),
+              qt: lastReading.qt,
+            } : null,
+          };
+        }),
       }));
     } catch (error) {
       this.logger.error('Erro ao buscar usuários:', error);
@@ -114,12 +128,24 @@ export class AdminService {
 
   async getDevices() {
     try {
+      // Determinar tempo limite para considerar dispositivo online (últimos 5 minutos)
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+      
+      // Buscar todos os dispositivos com suas relações
+      // Usar select para escolher apenas campos que existem no banco
       const devices = await this.prisma.device.findMany({
-        include: {
+        select: {
+          meterId: true,
+          name: true,
+          location: true,
+          userId: true,
+          createdAt: true,
+          updatedAt: true,
           user: {
             select: {
               id: true,
               email: true,
+              room: true,
             },
           },
           readings: {
@@ -134,23 +160,30 @@ export class AdminService {
         orderBy: { meterId: 'asc' },
       });
 
-      return devices.map(device => ({
-        meterId: device.meterId,
-        name: device.name,
-        location: device.location || 'Local não definido',
-        status: device.readings.length > 0 ? 'ONLINE' : 'OFFLINE',
-        lastReadingAt: device.readings.length > 0 
-          ? device.readings[0].timestamp.toLocaleString('pt-BR')
-          : 'Nunca',
-        lastReading: device.readings.length > 0 ? {
-          timestamp: device.readings[0].timestamp.toLocaleString('pt-BR'),
-          qt: device.readings[0].qt,
-        } : null,
-        user: device.user ? {
-          id: device.user.id,
-          email: device.user.email,
-        } : null,
-      }));
+      return devices.map(device => {
+        const lastReading = device.readings[0];
+        const lastReadingDate = lastReading ? lastReading.timestamp : null;
+        const isOnline = lastReadingDate && lastReadingDate >= fiveMinutesAgo;
+        
+        return {
+          meterId: device.meterId,
+          name: device.name,
+          location: device.location || 'Local não definido',
+          status: isOnline ? 'ONLINE' : 'OFFLINE',
+          lastReadingAt: lastReadingDate
+            ? lastReadingDate.toLocaleString('pt-BR')
+            : 'Nunca',
+          lastReading: lastReading ? {
+            timestamp: lastReading.timestamp.toLocaleString('pt-BR'),
+            qt: lastReading.qt || 0,
+          } : null,
+          user: device.user ? {
+            id: device.user.id,
+            email: device.user.email,
+            room: device.user.room || null,
+          } : null,
+        };
+      });
     } catch (error) {
       this.logger.error('Erro ao buscar dispositivos:', error);
       throw error;
@@ -480,6 +513,229 @@ export class AdminService {
       return logs.slice(0, limit);
     } catch (error) {
       this.logger.error('Erro ao buscar logs de atividade:', error);
+      throw error;
+    }
+  }
+
+  async deleteUser(userId: number) {
+    try {
+      // Verificar se o usuário existe
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (!user) {
+        throw new Error('Usuário não encontrado');
+      }
+
+      // Verificar se não é um admin (não permitir deletar admins)
+      if (user.role === 'ADMIN') {
+        throw new Error('Não é possível deletar um usuário administrador');
+      }
+
+      // Desassociar dispositivos do usuário antes de deletar
+      await this.prisma.device.updateMany({
+        where: { userId },
+        data: { userId: null },
+      });
+
+      // Deletar o usuário
+      await this.prisma.user.delete({
+        where: { id: userId },
+      });
+
+      this.logger.log(`Usuário ${userId} deletado com sucesso`);
+      return { success: true, message: 'Usuário deletado com sucesso' };
+    } catch (error) {
+      this.logger.error(`Erro ao deletar usuário ${userId}:`, error);
+      throw error;
+    }
+  }
+
+  async createUser(email: string, password: string, role: string = 'USER', room?: string) {
+    try {
+      // Validar se a sala já existe (case-insensitive) para usuários regulares
+      if (room && role === 'USER') {
+        const normalizedRoom = room.trim().toLowerCase();
+        
+        // Buscar todos os usuários com role USER e comparar salas (case-insensitive)
+        const users = await this.prisma.user.findMany({
+          where: {
+            role: 'USER',
+            room: {
+              not: null,
+            },
+          },
+          select: {
+            room: true,
+          },
+        });
+
+        const roomExists = users.some(user => 
+          user.room && user.room.toLowerCase() === normalizedRoom
+        );
+
+        if (roomExists) {
+          throw new Error(`Já existe um usuário com a sala "${room.trim()}". Cada sala deve ser única.`);
+        }
+      }
+
+      const user = await this.usersService.create(email, password, role, room);
+      
+      this.logger.log(`Usuário criado com sucesso: ${user.email}`);
+      return user;
+    } catch (error) {
+      this.logger.error('Erro ao criar usuário:', error);
+      throw error;
+    }
+  }
+
+  async updateUser(userId: number, email?: string, password?: string, room?: string) {
+    try {
+      // Verificar se o usuário existe
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (!user) {
+        throw new Error('Usuário não encontrado');
+      }
+
+      // Verificar se não é um admin (não permitir alterar admins através deste endpoint)
+      if (user.role === 'ADMIN') {
+        throw new Error('Não é possível alterar um usuário administrador');
+      }
+
+      // Validar se a sala já existe (case-insensitive) para usuários regulares
+      if (room !== undefined && user.role === 'USER') {
+        const normalizedRoom = room?.trim() || null;
+        
+        // Se está definindo uma sala, verificar se já existe
+        if (normalizedRoom) {
+          const normalizedRoomLower = normalizedRoom.toLowerCase();
+          
+          // Buscar todos os usuários com role USER (exceto o atual) e comparar salas (case-insensitive)
+          const users = await this.prisma.user.findMany({
+            where: {
+              role: 'USER',
+              id: {
+                not: userId, // Excluir o próprio usuário da verificação
+              },
+              room: {
+                not: null,
+              },
+            },
+            select: {
+              room: true,
+            },
+          });
+
+          const roomExists = users.some(u => 
+            u.room && u.room.toLowerCase() === normalizedRoomLower
+          );
+
+          if (roomExists) {
+            throw new Error(`Já existe um usuário com a sala "${normalizedRoom}". Cada sala deve ser única.`);
+          }
+        }
+      }
+
+      const updateData: any = {};
+      if (email) updateData.email = email.toLowerCase().trim();
+      if (password) {
+        const bcrypt = await import('bcrypt');
+        updateData.password = await bcrypt.hash(password, 10);
+      }
+      if (room !== undefined) updateData.room = room?.trim() || null;
+
+      // Se a sala foi alterada, atualizar location de todos os dispositivos associados
+      if (room !== undefined && user.room !== room) {
+        await this.prisma.device.updateMany({
+          where: { userId },
+          data: { location: room?.trim() || null },
+        });
+      }
+
+      const updatedUser = await this.prisma.user.update({
+        where: { id: userId },
+        data: updateData,
+      });
+
+      this.logger.log(`Usuário ${userId} atualizado com sucesso`);
+      return updatedUser;
+    } catch (error) {
+      this.logger.error(`Erro ao atualizar usuário ${userId}:`, error);
+      throw error;
+    }
+  }
+
+  async associateDeviceToUser(meterId: number, userId: number) {
+    try {
+      // Verificar se o dispositivo existe
+      const device = await this.prisma.device.findUnique({
+        where: { meterId },
+      });
+
+      if (!device) {
+        throw new Error('Dispositivo não encontrado');
+      }
+
+      // Verificar se o usuário existe e obter sua sala
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (!user) {
+        throw new Error('Usuário não encontrado');
+      }
+
+      if (!user.room) {
+        throw new Error('Usuário não possui uma sala associada. Defina uma sala para o usuário antes de associar medidores.');
+      }
+
+      // Verificar se o dispositivo já está associado a outro usuário
+      if (device.userId && device.userId !== userId) {
+        throw new Error('Dispositivo já está associado a outro usuário');
+      }
+
+      // Associar o dispositivo ao usuário e atualizar location com a sala do usuário
+      await this.prisma.device.update({
+        where: { meterId },
+        data: { 
+          userId,
+          location: user.room, // Atualizar location com a sala do usuário
+        },
+      });
+
+      this.logger.log(`Dispositivo ${meterId} associado ao usuário ${userId} (sala: ${user.room}) com sucesso`);
+      return { success: true, message: 'Dispositivo associado com sucesso' };
+    } catch (error) {
+      this.logger.error(`Erro ao associar dispositivo ${meterId} ao usuário ${userId}:`, error);
+      throw error;
+    }
+  }
+
+  async disassociateDeviceFromUser(meterId: number) {
+    try {
+      // Verificar se o dispositivo existe
+      const device = await this.prisma.device.findUnique({
+        where: { meterId },
+      });
+
+      if (!device) {
+        throw new Error('Dispositivo não encontrado');
+      }
+
+      // Desassociar o dispositivo (definir userId como null)
+      await this.prisma.device.update({
+        where: { meterId },
+        data: { userId: null },
+      });
+
+      this.logger.log(`Dispositivo ${meterId} desassociado com sucesso`);
+      return { success: true, message: 'Dispositivo desassociado com sucesso' };
+    } catch (error) {
+      this.logger.error(`Erro ao desassociar dispositivo ${meterId}:`, error);
       throw error;
     }
   }

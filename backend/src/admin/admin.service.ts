@@ -11,6 +11,93 @@ export class AdminService {
     private usersService: UsersService
   ) {}
 
+  // Função auxiliar para buscar rooms de um usuário (workaround temporário)
+  private async getUserRooms(userId: number): Promise<Array<{ id: number; name: string }>> {
+    try {
+      const rooms = await this.prisma.$queryRaw<Array<{ id: number; name: string }>>`
+        SELECT r.id, r.name
+        FROM "UserRoom" ur
+        INNER JOIN "Room" r ON ur."roomId" = r.id
+        WHERE ur."userId" = ${userId}
+        ORDER BY r.name
+      `;
+      return rooms;
+    } catch (error) {
+      this.logger.error(`Erro ao buscar rooms do usuário ${userId}:`, error);
+      return [];
+    }
+  }
+
+  // Função auxiliar para deletar todas as relações UserRoom de um usuário
+  private async deleteUserRooms(userId: number): Promise<void> {
+    await this.prisma.$executeRaw`
+      DELETE FROM "UserRoom" WHERE "userId" = ${userId}
+    `;
+  }
+
+  // Função auxiliar para verificar se uma relação UserRoom existe
+  private async findUserRoom(userId: number, roomId: number): Promise<{ id: number; userId: number; roomId: number } | null> {
+    const result = await this.prisma.$queryRaw<Array<{ id: number; userId: number; roomId: number }>>`
+      SELECT id, "userId", "roomId"
+      FROM "UserRoom"
+      WHERE "userId" = ${userId} AND "roomId" = ${roomId}
+      LIMIT 1
+    `;
+    return result.length > 0 ? result[0] : null;
+  }
+
+  // Função auxiliar para criar uma relação UserRoom
+  private async createUserRoom(userId: number, roomId: number): Promise<void> {
+    await this.prisma.$executeRaw`
+      INSERT INTO "UserRoom" ("userId", "roomId", "createdAt")
+      VALUES (${userId}, ${roomId}, NOW())
+    `;
+  }
+
+  // Função auxiliar para deletar uma relação UserRoom
+  private async deleteUserRoom(userId: number, roomId: number): Promise<void> {
+    await this.prisma.$executeRaw`
+      DELETE FROM "UserRoom"
+      WHERE "userId" = ${userId} AND "roomId" = ${roomId}
+    `;
+  }
+
+  // Função auxiliar para buscar todas as salas (workaround temporário)
+  private async getAllRooms(): Promise<Array<{ id: number; name: string }>> {
+    const rooms = await this.prisma.$queryRaw<Array<{ id: number; name: string }>>`
+      SELECT id, name
+      FROM "Room"
+      ORDER BY name
+    `;
+    return rooms;
+  }
+
+  // Função auxiliar para buscar ou criar uma sala (workaround temporário)
+  private async findOrCreateRoom(roomName: string): Promise<{ id: number; name: string }> {
+    // Buscar todas as salas e comparar case-insensitive
+    const allRooms = await this.getAllRooms();
+    let room = allRooms.find(r => r.name.toLowerCase() === roomName.toLowerCase());
+
+    if (!room) {
+      // Criar nova sala
+      const result = await this.prisma.$queryRaw<Array<{ id: number; name: string }>>`
+        INSERT INTO "Room" (name, "createdAt", "updatedAt")
+        VALUES (${roomName}, NOW(), NOW())
+        RETURNING id, name
+      `;
+      room = result[0];
+    }
+
+    return room;
+  }
+
+  // Função auxiliar para buscar uma sala por nome (workaround temporário)
+  private async findRoomByName(roomName: string): Promise<{ id: number; name: string } | null> {
+    const allRooms = await this.getAllRooms();
+    const room = allRooms.find(r => r.name.toLowerCase() === roomName.toLowerCase());
+    return room || null;
+  }
+
   async getStats() {
     try {
       // Contar total de dispositivos
@@ -68,6 +155,7 @@ export class AdminService {
       // Determinar tempo limite para considerar dispositivo online (últimos 5 minutos)
       const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
       
+      // Buscar usuários com devices (sem rooms por enquanto devido ao Prisma Client desatualizado)
       const users = await this.prisma.user.findMany({
         where: {
           role: 'USER', // Apenas usuários regulares
@@ -92,13 +180,34 @@ export class AdminService {
         orderBy: { createdAt: 'desc' },
       });
 
+      // Buscar rooms separadamente usando query raw (workaround temporário)
+      const userIds = users.map(u => u.id);
+      const userRooms = userIds.length > 0 
+        ? await this.prisma.$queryRaw<Array<{ userId: number; roomName: string }>>`
+            SELECT ur."userId", r.name as "roomName"
+            FROM "UserRoom" ur
+            INNER JOIN "Room" r ON ur."roomId" = r.id
+            WHERE ur."userId" = ANY(${userIds}::int[])
+            ORDER BY ur."userId", r.name
+          `
+        : [];
+
+      // Agrupar rooms por userId
+      const roomsByUserId = new Map<number, string[]>();
+      for (const ur of userRooms) {
+        if (!roomsByUserId.has(ur.userId)) {
+          roomsByUserId.set(ur.userId, []);
+        }
+        roomsByUserId.get(ur.userId)!.push(ur.roomName);
+      }
+
       // Transformar dados para o formato esperado pelo frontend
       return users.map(user => ({
         id: user.id,
         email: user.email,
         password: user.password, // Em produção, não retornar senha
         role: user.role.toLowerCase(),
-        room: user.room || null,
+        rooms: roomsByUserId.get(user.id) || [],
         createdAt: user.createdAt.toISOString().split('T')[0],
         devices: user.devices.map(device => {
           const lastReading = device.readings[0];
@@ -145,7 +254,6 @@ export class AdminService {
             select: {
               id: true,
               email: true,
-              room: true,
             },
           },
           readings: {
@@ -159,6 +267,30 @@ export class AdminService {
         },
         orderBy: { meterId: 'asc' },
       });
+
+      // Buscar rooms para usuários que têm dispositivos (workaround temporário)
+      const userIds = devices
+        .map(d => d.user?.id)
+        .filter((id): id is number => id !== null && id !== undefined);
+      
+      const userRooms = userIds.length > 0
+        ? await this.prisma.$queryRaw<Array<{ userId: number; roomName: string }>>`
+            SELECT ur."userId", r.name as "roomName"
+            FROM "UserRoom" ur
+            INNER JOIN "Room" r ON ur."roomId" = r.id
+            WHERE ur."userId" = ANY(${userIds}::int[])
+            ORDER BY ur."userId", r.name
+          `
+        : [];
+
+      // Agrupar rooms por userId
+      const roomsByUserId = new Map<number, string[]>();
+      for (const ur of userRooms) {
+        if (!roomsByUserId.has(ur.userId)) {
+          roomsByUserId.set(ur.userId, []);
+        }
+        roomsByUserId.get(ur.userId)!.push(ur.roomName);
+      }
 
       return devices.map(device => {
         const lastReading = device.readings[0];
@@ -180,7 +312,7 @@ export class AdminService {
           user: device.user ? {
             id: device.user.id,
             email: device.user.email,
-            room: device.user.room || null,
+            rooms: roomsByUserId.get(device.user.id) || [],
           } : null,
         };
       });
@@ -552,45 +684,35 @@ export class AdminService {
     }
   }
 
-  async createUser(email: string, password: string, role: string = 'USER', room?: string) {
+  async createUser(email: string, password: string, role: string = 'USER', rooms?: string[]) {
     try {
-      // Validar se a sala já existe (case-insensitive) para usuários regulares
-      if (room && role === 'USER') {
-        const normalizedRoom = room.trim().toLowerCase();
-        
-        // Buscar todos os usuários com role USER e comparar salas (case-insensitive)
-        const users = await this.prisma.user.findMany({
-          where: {
-            role: 'USER',
-            room: {
-              not: null,
-            },
-          },
-          select: {
-            room: true,
-          },
-        });
-
-        const roomExists = users.some(user => 
-          user.room && user.room.toLowerCase() === normalizedRoom
-        );
-
-        if (roomExists) {
-          throw new Error(`Já existe um usuário com a sala "${room.trim()}". Cada sala deve ser única.`);
+      const user = await this.usersService.create(email, password, role);
+      
+      // Adicionar salas se fornecidas
+      if (rooms && rooms.length > 0 && role === 'USER') {
+        for (const roomName of rooms) {
+          if (roomName && roomName.trim()) {
+            await this.addRoomToUser(user.id, roomName.trim());
+          }
         }
       }
-
-      const user = await this.usersService.create(email, password, role, room);
+      
+      // Buscar usuário e suas salas
+      const userRooms = await this.getUserRooms(user.id);
+      const userWithRooms = {
+        ...user,
+        rooms: userRooms.map(r => ({ room: { id: r.id, name: r.name } })),
+      };
       
       this.logger.log(`Usuário criado com sucesso: ${user.email}`);
-      return user;
+      return userWithRooms;
     } catch (error) {
       this.logger.error('Erro ao criar usuário:', error);
       throw error;
     }
   }
 
-  async updateUser(userId: number, email?: string, password?: string, room?: string) {
+  async updateUser(userId: number, email?: string, password?: string, rooms?: string[]) {
     try {
       // Verificar se o usuário existe
       const user = await this.prisma.user.findUnique({
@@ -606,63 +728,53 @@ export class AdminService {
         throw new Error('Não é possível alterar um usuário administrador');
       }
 
-      // Validar se a sala já existe (case-insensitive) para usuários regulares
-      if (room !== undefined && user.role === 'USER') {
-        const normalizedRoom = room?.trim() || null;
-        
-        // Se está definindo uma sala, verificar se já existe
-        if (normalizedRoom) {
-          const normalizedRoomLower = normalizedRoom.toLowerCase();
-          
-          // Buscar todos os usuários com role USER (exceto o atual) e comparar salas (case-insensitive)
-          const users = await this.prisma.user.findMany({
-            where: {
-              role: 'USER',
-              id: {
-                not: userId, // Excluir o próprio usuário da verificação
-              },
-              room: {
-                not: null,
-              },
-            },
-            select: {
-              room: true,
-            },
-          });
-
-          const roomExists = users.some(u => 
-            u.room && u.room.toLowerCase() === normalizedRoomLower
-          );
-
-          if (roomExists) {
-            throw new Error(`Já existe um usuário com a sala "${normalizedRoom}". Cada sala deve ser única.`);
-          }
-        }
-      }
-
       const updateData: any = {};
       if (email) updateData.email = email.toLowerCase().trim();
       if (password) {
         const bcrypt = await import('bcrypt');
         updateData.password = await bcrypt.hash(password, 10);
       }
-      if (room !== undefined) updateData.room = room?.trim() || null;
 
-      // Se a sala foi alterada, atualizar location de todos os dispositivos associados
-      if (room !== undefined && user.room !== room) {
-        await this.prisma.device.updateMany({
-          where: { userId },
-          data: { location: room?.trim() || null },
+      // Atualizar dados básicos do usuário
+      if (Object.keys(updateData).length > 0) {
+        await this.prisma.user.update({
+          where: { id: userId },
+          data: updateData,
         });
       }
 
-      const updatedUser = await this.prisma.user.update({
+      // Atualizar salas se fornecido
+      if (rooms !== undefined && user.role === 'USER') {
+        // Remover todas as salas atuais
+        await this.deleteUserRooms(userId);
+
+        // Adicionar novas salas
+        for (const roomName of rooms) {
+          if (roomName && roomName.trim()) {
+            await this.addRoomToUser(userId, roomName.trim());
+          }
+        }
+
+        // Atualizar location dos dispositivos com a primeira sala (ou null se não houver salas)
+        const firstRoom = rooms.length > 0 && rooms[0]?.trim() ? rooms[0].trim() : null;
+        await this.prisma.device.updateMany({
+          where: { userId },
+          data: { location: firstRoom },
+        });
+      }
+
+      // Buscar usuário atualizado e suas salas
+      const updatedUser = await this.prisma.user.findUnique({
         where: { id: userId },
-        data: updateData,
       });
+      const userRooms = await this.getUserRooms(userId);
+      const userWithRooms = {
+        ...updatedUser!,
+        rooms: userRooms.map(r => ({ room: { id: r.id, name: r.name } })),
+      };
 
       this.logger.log(`Usuário ${userId} atualizado com sucesso`);
-      return updatedUser;
+      return userWithRooms;
     } catch (error) {
       this.logger.error(`Erro ao atualizar usuário ${userId}:`, error);
       throw error;
@@ -680,7 +792,7 @@ export class AdminService {
         throw new Error('Dispositivo não encontrado');
       }
 
-      // Verificar se o usuário existe e obter sua sala
+      // Verificar se o usuário existe
       const user = await this.prisma.user.findUnique({
         where: { id: userId },
       });
@@ -689,8 +801,10 @@ export class AdminService {
         throw new Error('Usuário não encontrado');
       }
 
-      if (!user.room) {
-        throw new Error('Usuário não possui uma sala associada. Defina uma sala para o usuário antes de associar medidores.');
+      // Obter salas do usuário
+      const userRooms = await this.getUserRooms(userId);
+      if (!userRooms || userRooms.length === 0) {
+        throw new Error('Usuário não possui salas associadas. Defina pelo menos uma sala para o usuário antes de associar medidores.');
       }
 
       // Verificar se o dispositivo já está associado a outro usuário
@@ -698,19 +812,108 @@ export class AdminService {
         throw new Error('Dispositivo já está associado a outro usuário');
       }
 
-      // Associar o dispositivo ao usuário e atualizar location com a sala do usuário
+      // Associar o dispositivo ao usuário e atualizar location com a primeira sala do usuário
+      const firstRoom = userRooms[0]?.name || null;
       await this.prisma.device.update({
         where: { meterId },
         data: { 
           userId,
-          location: user.room, // Atualizar location com a sala do usuário
+          location: firstRoom,
         },
       });
 
-      this.logger.log(`Dispositivo ${meterId} associado ao usuário ${userId} (sala: ${user.room}) com sucesso`);
+      this.logger.log(`Dispositivo ${meterId} associado ao usuário ${userId} (salas: ${userRooms.map(r => r.name).join(', ')}) com sucesso`);
       return { success: true, message: 'Dispositivo associado com sucesso' };
     } catch (error) {
       this.logger.error(`Erro ao associar dispositivo ${meterId} ao usuário ${userId}:`, error);
+      throw error;
+    }
+  }
+
+  async addRoomToUser(userId: number, roomName: string) {
+    try {
+      // Verificar se o usuário existe
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (!user) {
+        throw new Error('Usuário não encontrado');
+      }
+
+      if (user.role !== 'USER') {
+        throw new Error('Apenas usuários regulares podem ter salas associadas');
+      }
+
+      const normalizedRoomName = roomName.trim();
+      if (!normalizedRoomName) {
+        throw new Error('Nome da sala não pode ser vazio');
+      }
+
+      // Buscar ou criar a sala (case-insensitive)
+      const room = await this.findOrCreateRoom(normalizedRoomName);
+
+      // Verificar se a relação já existe
+      const existingRelation = await this.findUserRoom(userId, room.id);
+
+      if (existingRelation) {
+        throw new Error(`Usuário já possui a sala "${normalizedRoomName}" associada`);
+      }
+
+      // Criar relação
+      await this.createUserRoom(userId, room.id);
+
+      this.logger.log(`Sala "${normalizedRoomName}" adicionada ao usuário ${userId} com sucesso`);
+      return { success: true, message: `Sala "${normalizedRoomName}" adicionada com sucesso` };
+    } catch (error) {
+      this.logger.error(`Erro ao adicionar sala ao usuário ${userId}:`, error);
+      throw error;
+    }
+  }
+
+  async removeRoomFromUser(userId: number, roomName: string) {
+    try {
+      // Verificar se o usuário existe
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (!user) {
+        throw new Error('Usuário não encontrado');
+      }
+
+      const normalizedRoomName = roomName.trim();
+      
+      // Encontrar a sala (case-insensitive)
+      const room = await this.findRoomByName(normalizedRoomName);
+
+      if (!room) {
+        throw new Error(`Sala "${normalizedRoomName}" não encontrada`);
+      }
+
+      // Verificar se a relação existe
+      const userRoom = await this.findUserRoom(userId, room.id);
+
+      if (!userRoom) {
+        throw new Error(`Usuário não possui a sala "${normalizedRoomName}" associada`);
+      }
+
+      // Remover relação
+      await this.deleteUserRoom(userId, room.id);
+
+      // Atualizar location dos dispositivos se necessário
+      const remainingRooms = await this.getUserRooms(userId);
+      const newLocation = remainingRooms.length > 0 ? remainingRooms[0].name : null;
+      
+      await this.prisma.device.updateMany({
+        where: { userId },
+        data: { location: newLocation },
+      });
+
+      this.logger.log(`Sala "${normalizedRoomName}" removida do usuário ${userId} com sucesso`);
+      return { success: true, message: `Sala "${normalizedRoomName}" removida com sucesso` };
+    } catch (error) {
+      this.logger.error(`Erro ao remover sala do usuário ${userId}:`, error);
       throw error;
     }
   }

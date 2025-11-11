@@ -1,5 +1,5 @@
-import React from 'react';
-import { UsersRound, Mail, Lock, Edit3, Save, X, Eye, EyeOff, Trash2, Zap, Clock, CheckSquare, Square } from 'lucide-react';
+import React, { useState } from 'react';
+import { UsersRound, Mail, Lock, Edit3, Save, X, Eye, EyeOff, Trash2, Zap, Clock, CheckSquare, Square, Building2, Copy, Check } from 'lucide-react';
 import { UserData, EditUserData } from './types';
 
 interface UserCardProps {
@@ -8,6 +8,7 @@ interface UserCardProps {
   isEditing: boolean;
   editData?: EditUserData;
   showPassword: boolean;
+  originalPassword?: string;
   onSelect?: () => void;
   onEditChange: (data: EditUserData) => void;
   onSave: () => void;
@@ -24,6 +25,7 @@ const UserCard: React.FC<UserCardProps> = ({
   isEditing,
   editData,
   showPassword,
+  originalPassword,
   onSelect,
   onEditChange,
   onSave,
@@ -33,6 +35,9 @@ const UserCard: React.FC<UserCardProps> = ({
   onTogglePassword,
   onViewMeters,
 }) => {
+  const [copied, setCopied] = useState(false);
+  // Usar senha original se disponível, caso contrário usar a senha do user (hasheada)
+  const displayPassword = originalPassword || user.password || 'N/A';
   return (
     <div className={`user-card-modern ${isSelected ? 'card-selected' : ''}`}>
       {onSelect && (
@@ -46,9 +51,9 @@ const UserCard: React.FC<UserCardProps> = ({
           aria-pressed={isSelected}
         >
           {isSelected ? (
-            <CheckSquare size={18} />
+            <CheckSquare size={14} />
           ) : (
-            <Square size={18} />
+            <Square size={14} />
           )}
         </button>
       )}
@@ -110,12 +115,53 @@ const UserCard: React.FC<UserCardProps> = ({
               <Lock size={14} />
               <span className="detail-label">Senha:</span>
               <span className="detail-value password-value-card">
-                {showPassword ? (user.password || 'N/A') : '********'}
+                {showPassword ? displayPassword : '********'}
               </span>
+              {displayPassword && displayPassword !== 'N/A' && (
+                <button
+                  className="toggle-password-modern copy-password"
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    try {
+                      await navigator.clipboard.writeText(displayPassword);
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    } catch (error) {
+                      console.error('Erro ao copiar senha:', error);
+                    }
+                  }}
+                  title={copied ? 'Copiado!' : 'Copiar senha'}
+                  aria-label="Copiar senha"
+                >
+                  {copied ? <Check size={14} /> : <Copy size={14} />}
+                </button>
+              )}
               <button className="toggle-password-modern" onClick={onTogglePassword}>
                 {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
               </button>
             </div>
+            {user.rooms && user.rooms.length > 0 && (
+              <div className="detail-item">
+                <Building2 size={14} />
+                <span className="detail-label">Salas:</span>
+                <div className="detail-value rooms-list-card" title={user.rooms.join(', ')}>
+                  {user.rooms.length <= 3 ? (
+                    user.rooms.map((room, index) => (
+                      <span key={index} className="room-badge-card">{room}</span>
+                    ))
+                  ) : (
+                    <>
+                      {user.rooms.slice(0, 2).map((room, index) => (
+                        <span key={index} className="room-badge-card">{room}</span>
+                      ))}
+                      <span className="room-badge-card-more" title={`Mais ${user.rooms.length - 2} sala${user.rooms.length - 2 > 1 ? 's' : ''}: ${user.rooms.slice(2).join(', ')}`}>
+                        +{user.rooms.length - 2}
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
             <div className="detail-item">
               <Zap size={14} />
               <span className="detail-label">Medidores:</span>

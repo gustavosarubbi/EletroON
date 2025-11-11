@@ -71,14 +71,14 @@ export class AdminController {
   @Post('users')
   @UseGuards(JwtAuthGuard)
   async createUser(
-    @Body() body: { email: string; password: string; role?: string; room?: string },
+    @Body() body: { email: string; password: string; role?: string; rooms?: string[] },
     @Request() req: { user: AuthenticatedUser }
   ) {
     return this.adminService.createUser(
       body.email,
       body.password,
       body.role || 'USER',
-      body.room
+      body.rooms
     );
   }
 
@@ -86,9 +86,29 @@ export class AdminController {
   @UseGuards(JwtAuthGuard)
   async updateUser(
     @Param('id') id: string,
-    @Body() body: { email?: string; password?: string; room?: string },
+    @Body() body: { email?: string; password?: string; rooms?: string[] },
     @Request() req: { user: AuthenticatedUser }
   ) {
-    return this.adminService.updateUser(parseInt(id), body.email, body.password, body.room);
+    return this.adminService.updateUser(parseInt(id), body.email, body.password, body.rooms);
+  }
+
+  @Post('users/:id/rooms')
+  @UseGuards(JwtAuthGuard)
+  async addRoomToUser(
+    @Param('id') id: string,
+    @Body() body: { roomName: string },
+    @Request() req: { user: AuthenticatedUser }
+  ) {
+    return this.adminService.addRoomToUser(parseInt(id), body.roomName);
+  }
+
+  @Delete('users/:id/rooms')
+  @UseGuards(JwtAuthGuard)
+  async removeRoomFromUser(
+    @Param('id') id: string,
+    @Body() body: { roomName: string },
+    @Request() req: { user: AuthenticatedUser }
+  ) {
+    return this.adminService.removeRoomFromUser(parseInt(id), body.roomName);
   }
 }

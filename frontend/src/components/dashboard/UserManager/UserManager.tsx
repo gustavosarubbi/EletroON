@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import '../../../styles/components/UserManager.css';
 import { useUserManager } from './hooks/useUserManager';
+import { dashboardService } from '../../../services/dashboardService';
 import UserStats from './UserStats';
 import UserToolbar from './UserToolbar';
 import AddUserForm from './AddUserForm';
@@ -35,6 +36,7 @@ const UserManager: React.FC = () => {
     selectedUser,
     newUser,
     editData,
+    originalPasswords,
     deleteConfirm,
     // Handlers
     loadUsersData,
@@ -57,6 +59,7 @@ const UserManager: React.FC = () => {
     // Setters
     setShowAddForm,
     setSelectedUserId,
+    setEditingUserId,
     setSearchQuery,
     setFilterRole,
     setViewMode,
@@ -64,18 +67,62 @@ const UserManager: React.FC = () => {
     setNewUser,
     setEditData,
     setSelectedUsers,
+    setShowPasswords,
+    setOriginalPasswords,
   } = useUserManager();
 
   const handleClearSelection = () => {
     setSelectedUsers([]);
   };
 
-  const handleEditChange = (userId: number, data: { email: string; password: string }) => {
+  const handleEditChange = (userId: number, data: { email: string; password: string; rooms?: string[] }) => {
     setEditData({
       ...editData,
       [userId]: data
     });
   };
+
+  // Memoizar função de fechar modal para evitar recriações
+  const handleCloseModal = useCallback(() => {
+    setEditingUserId(null);
+  }, [setEditingUserId]);
+
+  // Memoizar função de salvar para evitar recriações
+  const handleSaveUserModal = useCallback(async (data: { email: string; password: string; rooms?: string[] }) => {
+    const currentEditingUserId = editingUserId;
+    if (!currentEditingUserId) return;
+    
+    try {
+      // Se uma nova senha foi fornecida, armazenar a senha original antes de enviar
+      if (data.password && data.password.trim() !== '') {
+        setOriginalPasswords(prev => ({
+          ...prev,
+          [currentEditingUserId]: data.password
+        }));
+      }
+      // Salvar usando os dados passados diretamente
+      await dashboardService.updateUser(currentEditingUserId, data.email, data.password, data.rooms);
+      // Recarregar dados após atualização
+      await loadUsersData();
+      // Limpar editData usando função de atualização
+      setEditData(prev => {
+        const newEditData = { ...prev };
+        delete newEditData[currentEditingUserId];
+        return newEditData;
+      });
+      // FECHAR MODAL PRIMEIRO
+      setEditingUserId(null);
+      // Resetar o estado de visualização de senha para o usuário atualizado
+      setShowPasswords(prev => {
+        const newState = { ...prev };
+        delete newState[currentEditingUserId];
+        return newState;
+      });
+    } catch (error) {
+      console.error('Erro ao salvar usuário:', error);
+      throw error;
+    }
+  }, [editingUserId, setEditData, setEditingUserId, setShowPasswords, setOriginalPasswords, loadUsersData]);
 
   if (loading) {
     return <LoadingState />;
@@ -133,6 +180,7 @@ const UserManager: React.FC = () => {
           totalItems={sortedUsers.length}
           editingUserId={editingUserId}
           showPasswords={showPasswords}
+          originalPasswords={originalPasswords}
           onSort={handleSort}
           onSelectAll={handleSelectAll}
           onSelectUser={handleSelectUser}
@@ -154,6 +202,7 @@ const UserManager: React.FC = () => {
           editingUserId={editingUserId}
           showPasswords={showPasswords}
           editData={editData}
+          originalPasswords={originalPasswords}
           onSelectAll={handleSelectAll}
           onSelectUser={handleSelectUser}
           onEditUser={handleEditUser}
@@ -178,16 +227,16 @@ const UserManager: React.FC = () => {
       {/* Modal de Edição de Usuário */}
       {editingUserId && (() => {
         const userToEdit = users.find(u => u.id === editingUserId);
-        return userToEdit ? (
+        if (!userToEdit) return null;
+        
+        return (
           <EditUserModal
+            key={editingUserId} // Forçar re-render quando editingUserId mudar
             user={userToEdit}
-            onSave={async (data) => {
-              handleEditChange(editingUserId, data);
-              await handleSaveUser(editingUserId);
-            }}
-            onClose={handleCancelEdit}
+            onSave={handleSaveUserModal}
+            onClose={handleCloseModal}
           />
-        ) : null;
+        );
       })()}
 
       {/* Modal de Confirmação de Exclusão */}

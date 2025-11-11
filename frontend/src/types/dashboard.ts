@@ -14,7 +14,7 @@ export interface Device {
   user?: {
     id: number;
     email: string;
-    room?: string | null;
+    rooms?: string[];
   } | null;
 }
 
@@ -55,7 +55,7 @@ export interface User {
   email: string;
   password?: string;
   role: string;
-  room?: string | null;
+  rooms?: string[];
   createdAt: string;
   devices: Array<{
     meterId: number;

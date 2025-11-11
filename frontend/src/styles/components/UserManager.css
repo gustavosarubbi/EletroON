@@ -1415,13 +1415,13 @@
 
 .card-checkbox-btn {
   position: absolute;
-  top: 16px;
-  right: 16px;
+  top: 12px;
+  right: 12px;
   background: rgba(15, 23, 42, 0.9);
   border: 1.5px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
-  width: 32px;
-  height: 32px;
+  border-radius: 6px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1444,8 +1444,8 @@
 }
 
 .card-checkbox-btn svg {
-  width: 18px;
-  height: 18px;
+  width: 14px;
+  height: 14px;
 }
 
 .user-card-header-modern {
@@ -1603,6 +1603,20 @@
   color: #60a5fa;
   background: rgba(59, 130, 246, 0.2);
   border-color: rgba(59, 130, 246, 0.4);
+}
+
+.toggle-password-modern.copy-password {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.2);
+  color: rgba(16, 185, 129, 0.9);
+  margin-left: 0;
+  margin-right: -2px;
+}
+
+.toggle-password-modern.copy-password:hover {
+  color: #34d399;
+  background: rgba(16, 185, 129, 0.2);
+  border-color: rgba(16, 185, 129, 0.4);
 }
 
 .user-actions-modern {
@@ -2355,7 +2369,8 @@
 
 .table-cell-meters,
 .table-cell-date,
-.table-cell-room {
+.table-cell-room,
+.table-cell-rooms {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -2366,7 +2381,8 @@
 .table-cell-item .table-cell-email,
 .table-cell-item .table-cell-meters,
 .table-cell-item .table-cell-date,
-.table-cell-item .table-cell-room {
+.table-cell-item .table-cell-room,
+.table-cell-item .table-cell-rooms {
   padding: 0;
 }
 
@@ -2379,7 +2395,8 @@
 
 .table-cell-meters svg,
 .table-cell-date svg,
-.table-cell-room svg {
+.table-cell-room svg,
+.table-cell-rooms svg {
   color: rgba(139, 92, 246, 0.75);
   flex-shrink: 0;
   width: 16px;
@@ -2496,6 +2513,10 @@
   max-width: 180px;
 }
 
+.table-password-column .table-cell-item {
+  padding:0px 0px;
+}
+
 /* ===== ESTILOS PARA BOTÃO DE SENHA ===== */
 .table-action-btn-icon.password-toggle {
   background: rgba(59, 130, 246, 0.15) !important;
@@ -2509,6 +2530,22 @@
   color: #93c5fd !important;
 }
 
+.table-action-btn-icon.copy-password {
+  background: rgba(16, 185, 129, 0.15) !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+  color: #34d399 !important;
+}
+
+.table-action-btn-icon.copy-password:hover {
+  background: rgba(16, 185, 129, 0.25) !important;
+  border-color: rgba(16, 185, 129, 0.5) !important;
+  color: #6ee7b7 !important;
+}
+
+.table-action-btn-icon.copy-password svg {
+  transition: all 0.2s ease;
+}
+
 .password-label {
   padding: 4px 8px;
   background: rgba(59, 130, 246, 0.1);
@@ -2518,6 +2555,13 @@
   font-weight: 500;
   color: rgba(255, 255, 255, 0.7) !important;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
 }
 
 /* ===== POPOVER DE SENHA ===== */
@@ -3183,6 +3227,29 @@
 }
 
 .edit-user-modal .modal-footer-modern .btn-primary:disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.edit-user-modal .modal-footer-modern .btn-secondary {
+  background: rgba(239, 68, 68, 0.15) !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+  color: #f87171 !important;
+}
+
+.edit-user-modal .modal-footer-modern .btn-secondary:hover {
+  background: rgba(239, 68, 68, 0.25) !important;
+  border-color: rgba(239, 68, 68, 0.5) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3);
+}
+
+.edit-user-modal .modal-footer-modern .btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.edit-user-modal .modal-footer-modern .btn-secondary:disabled:hover {
   transform: none;
   box-shadow: none;
 }
@@ -4895,12 +4962,372 @@
 .meter-meters-view {
   display: flex;
   flex-direction: column;
+  gap: 24px;
+}
+
+.meter-meters-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.meter-status-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.meter-status-section-header {
+  padding: 16px 20px;
+  background: rgba(15, 23, 42, 0.6);
+  border-radius: 12px;
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  border-left: 4px solid;
+}
+
+.meter-status-section-header.online {
+  border-left-color: #10b981;
+  background: rgba(16, 185, 129, 0.05);
+}
+
+.meter-status-section-header.offline {
+  border-left-color: #ef4444;
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.meter-status-section-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.meter-status-section-title svg {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.meter-status-section-title h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.95);
+  margin: 0;
+  flex: 1;
+}
+
+.meter-status-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.meter-status-section-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
 }
 
 .meter-meters-list-enhanced {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+/* Cards de Medidores Melhorados */
+.meter-meter-card {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 18px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  border-left: 4px solid;
+}
+
+.meter-meter-card.online {
+  border-left-color: #10b981;
+}
+
+.meter-meter-card.offline {
+  border-left-color: #ef4444;
+}
+
+.meter-meter-card.associated {
+  background: rgba(139, 92, 246, 0.05);
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+.meter-meter-card.available {
+  background: rgba(245, 158, 11, 0.05);
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.meter-meter-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.meter-meter-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.meter-meter-card-icon-wrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.meter-meter-card-icon {
+  color: #fbbf24;
+  filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.4));
+}
+
+.meter-meter-status-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(15, 23, 42, 0.95);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.meter-meter-status-badge.online {
+  background: #10b981;
+  color: white;
+}
+
+.meter-meter-status-badge.offline {
+  background: #ef4444;
+  color: white;
+}
+
+.meter-meter-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.meter-meter-card-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.95);
+  margin-bottom: 8px;
+}
+
+.meter-meter-card-details {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  flex-wrap: wrap;
+}
+
+.meter-meter-card-id {
+  font-family: 'Courier New', monospace;
+}
+
+.meter-meter-card-separator {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.meter-meter-card-location,
+.meter-meter-card-reading {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.meter-meter-card-footer {
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.meter-meter-card-associated {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.meter-meter-card-user-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.meter-meter-card-user-info svg {
+  color: #a78bfa;
+  flex-shrink: 0;
+}
+
+.meter-meter-card-user-email {
+  font-size: 13px;
+  color: rgba(139, 92, 246, 0.9);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meter-meter-card-disassociate-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1.5px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  color: #f87171;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.meter-meter-card-disassociate-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.5);
+  transform: translateY(-1px);
+}
+
+.meter-meter-card-available {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.meter-meter-card-associate-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.meter-meter-card-available-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: rgba(245, 158, 11, 0.9);
+  font-weight: 600;
+  flex: 1;
+}
+
+.meter-meter-card-associate-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(59, 130, 246, 0.15);
+  border: 1.5px solid rgba(59, 130, 246, 0.3);
+  border-radius: 8px;
+  color: #60a5fa;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.meter-meter-card-associate-btn:hover {
+  background: rgba(59, 130, 246, 0.25);
+  border-color: rgba(59, 130, 246, 0.5);
+  transform: translateY(-1px);
+}
+
+.meter-meter-card-user-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.meter-meter-card-user-select {
+  width: 100%;
+  padding: 10px 14px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+.meter-meter-card-user-select:focus {
+  outline: none;
+  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.meter-meter-card-associate-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.meter-meter-card-confirm-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1.5px solid rgba(16, 185, 129, 0.3);
+  border-radius: 8px;
+  color: #34d399;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex: 1;
+}
+
+.meter-meter-card-confirm-btn:hover:not(:disabled) {
+  background: rgba(16, 185, 129, 0.25);
+  border-color: rgba(16, 185, 129, 0.5);
+  transform: translateY(-1px);
+}
+
+.meter-meter-card-confirm-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.meter-meter-card-cancel-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(107, 114, 128, 0.15);
+  border: 1.5px solid rgba(107, 114, 128, 0.3);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.meter-meter-card-cancel-btn:hover {
+  background: rgba(107, 114, 128, 0.25);
+  border-color: rgba(107, 114, 128, 0.5);
+  transform: translateY(-1px);
 }
 
 .meter-meter-item-enhanced {
@@ -5915,4 +6342,213 @@
   .meters-grid-enhanced {
     grid-template-columns: 1fr;
   }
+}
+
+/* ===== ESTILOS PARA MÚLTIPLAS SALAS ===== */
+
+.rooms-input-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rooms-input-wrapper {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.rooms-input-wrapper input {
+  flex: 1;
+  padding: 10px 14px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #e2e8f0;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.rooms-input-wrapper input:focus {
+  outline: none;
+  border-color: rgba(59, 130, 246, 0.5);
+  background: rgba(15, 23, 42, 0.8);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.btn-add-room {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 14px;
+  background: rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 8px;
+  color: #60a5fa;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-add-room:hover:not(:disabled) {
+  background: rgba(59, 130, 246, 0.3);
+  border-color: rgba(59, 130, 246, 0.5);
+  transform: translateY(-1px);
+}
+
+.btn-add-room:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.rooms-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.room-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 6px;
+  color: #93c5fd;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+.room-tag:hover {
+  background: rgba(59, 130, 246, 0.25);
+  border-color: rgba(59, 130, 246, 0.5);
+}
+
+.room-tag svg {
+  flex-shrink: 0;
+}
+
+.room-tag span {
+  flex: 1;
+}
+
+.btn-remove-room {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  background: transparent;
+  border: none;
+  color: #93c5fd;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  opacity: 0.7;
+}
+
+.btn-remove-room:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  opacity: 1;
+}
+
+/* Estilos para tabela - múltiplas salas */
+.table-cell-rooms {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.table-cell-rooms svg {
+  flex-shrink: 0;
+}
+
+.rooms-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  min-width: 0;
+  flex: 1;
+}
+
+.room-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 4px;
+  color: #93c5fd;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.room-badge-more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+  min-width: 28px;
+  background: rgba(139, 92, 246, 0.2);
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  border-radius: 4px;
+  color: #c4b5fd;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: help;
+  transition: all 0.2s ease;
+}
+
+/* Remover qualquer ícone dentro do badge */
+.room-badge-more svg,
+.room-badge-more .icon {
+  display: none !important;
+}
+
+.room-badge-more:hover {
+  background: rgba(139, 92, 246, 0.3);
+  border-color: rgba(139, 92, 246, 0.6);
+  transform: scale(1.05);
+}
+
+/* Estilos para card - múltiplas salas */
+.rooms-list-card {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.room-badge-card {
+  display: inline-block;
+  padding: 4px 10px;
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 6px;
+  color: #93c5fd;
+  font-size: 12px;
+}
+
+.room-badge-card-more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  min-width: 32px;
+  background: rgba(139, 92, 246, 0.2);
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  border-radius: 6px;
+  color: #c4b5fd;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: help;
+  transition: all 0.2s ease;
+}
+
+.room-badge-card-more:hover {
+  background: rgba(139, 92, 246, 0.3);
+  border-color: rgba(139, 92, 246, 0.6);
+  transform: scale(1.05);
 }

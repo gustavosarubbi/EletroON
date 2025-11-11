@@ -46,11 +46,12 @@ const MeterManagement: React.FC<MeterManagementProps> = ({
   onClose,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState<'users' | 'meters'>('users');
+  const [viewMode, setViewMode] = useState<'users' | 'meters'>('meters');
   const [filterStatus, setFilterStatus] = useState<'all' | 'ONLINE' | 'OFFLINE' | 'available'>('all');
   const [expandedUsers, setExpandedUsers] = useState<Set<number>>(new Set());
   const [selectedMeterForUser, setSelectedMeterForUser] = useState<{ userId: number; meterId: number | null } | null>(null);
   const [meterSearchQuery, setMeterSearchQuery] = useState('');
+  const [selectedUserForMeter, setSelectedUserForMeter] = useState<Record<number, number | null>>({});
 
   // Criar lista completa de medidores a partir dos dados reais da API
   const allMeters: Meter[] = useMemo(() => {
@@ -270,18 +271,18 @@ const MeterManagement: React.FC<MeterManagementProps> = ({
         </div>
         <div className="meter-view-toggle">
           <button
-            className={`meter-view-btn ${viewMode === 'users' ? 'active' : ''}`}
-            onClick={() => setViewMode('users')}
-          >
-            <UsersRound size={16} />
-            <span>Por Usuário</span>
-          </button>
-          <button
             className={`meter-view-btn ${viewMode === 'meters' ? 'active' : ''}`}
             onClick={() => setViewMode('meters')}
           >
             <Zap size={16} />
             <span>Por Medidor</span>
+          </button>
+          <button
+            className={`meter-view-btn ${viewMode === 'users' ? 'active' : ''}`}
+            onClick={() => setViewMode('users')}
+          >
+            <UsersRound size={16} />
+            <span>Por Usuário</span>
           </button>
         </div>
         {viewMode === 'meters' && (
@@ -342,10 +343,10 @@ const MeterManagement: React.FC<MeterManagementProps> = ({
                           <div className="meter-user-info-enhanced">
                             <div className="meter-user-email-enhanced">{user.email}</div>
                             <div className="meter-user-stats">
-                              {user.room && (
-                                <span className="meter-user-stat-badge room">
+                              {user.rooms && user.rooms.length > 0 && (
+                                <span className="meter-user-stat-badge room" title={user.rooms.join(', ')}>
                                   <MapPin size={12} />
-                                  {user.room}
+                                  {user.rooms.length === 1 ? user.rooms[0] : `${user.rooms.length} salas`}
                                 </span>
                               )}
                               <span className="meter-user-stat-badge">
@@ -359,15 +360,15 @@ const MeterManagement: React.FC<MeterManagementProps> = ({
                                 </span>
                               )}
                             </div>
-                            {!user.room && (
+                            {(!user.rooms || user.rooms.length === 0) && (
                               <div className="meter-user-warning">
-                                ⚠️ Este usuário não possui uma sala definida. Defina uma sala antes de associar medidores.
+                                ⚠️ Este usuário não possui salas definidas. Defina pelo menos uma sala antes de associar medidores.
                               </div>
                             )}
                           </div>
                         </div>
                         <div className="meter-user-card-actions">
-                          {availableMeters.length > 0 && user.room && (
+                          {availableMeters.length > 0 && user.rooms && user.rooms.length > 0 && (
                             <button
                               className="meter-associate-btn"
                               onClick={(e) => {
@@ -403,11 +404,11 @@ const MeterManagement: React.FC<MeterManagementProps> = ({
                               )}
                             </button>
                           )}
-                          {!user.room && (
+                          {(!user.rooms || user.rooms.length === 0) && (
                             <button
                               className="meter-associate-btn disabled"
                               disabled
-                              title="Defina uma sala para o usuário antes de associar medidores"
+                              title="Defina pelo menos uma sala para o usuário antes de associar medidores"
                             >
                               <MapPin size={16} />
                               <span>Sem Sala</span>
@@ -471,11 +472,11 @@ const MeterManagement: React.FC<MeterManagementProps> = ({
                           )}
 
                           {/* Medidores Disponíveis para Associar */}
-                          {isSelectingMeter && user.room && availableMeters.length > 0 && (
+                          {isSelectingMeter && user.rooms && user.rooms.length > 0 && availableMeters.length > 0 && (
                             <div className="meter-available-meters-section">
                               <div className="meter-section-title">
                                 <Plus size={14} />
-                                <span>Associar Medidor à Sala: {user.room}</span>
+                                <span>Associar Medidor às Salas: {user.rooms.join(', ')}</span>
                               </div>
                               <div className="meter-associate-search-wrapper">
                                 <Search size={14} className="meter-associate-search-icon" />
@@ -543,9 +544,9 @@ const MeterManagement: React.FC<MeterManagementProps> = ({
                             <div className="meter-user-empty-state">
                               <Zap size={32} />
                               <p>Nenhum medidor associado</p>
-                              {!user.room ? (
+                              {(!user.rooms || user.rooms.length === 0) ? (
                                 <span className="meter-user-warning-text">
-                                  Defina uma sala para este usuário antes de associar medidores.
+                                  Defina pelo menos uma sala para este usuário antes de associar medidores.
                                 </span>
                               ) : availableMeters.length > 0 ? (
                                 <button
@@ -575,77 +576,307 @@ const MeterManagement: React.FC<MeterManagementProps> = ({
             )}
           </div>
         ) : (
-          /* Visualização por Medidor */
+          /* Visualização por Medidor - Separada por Online/Offline */
           <div className="meter-meters-view">
             {filteredMeters.length > 0 ? (
-              <div className="meter-meters-list-enhanced">
-                {filteredMeters.map(meter => {
-                  const isAssociated = !!meter.associatedUserId;
-
-                  return (
-                    <div
-                      key={meter.id}
-                      className={`meter-meter-item-enhanced ${isAssociated ? 'associated' : 'available'} ${meter.status.toLowerCase()}`}
-                    >
-                      <div className="meter-meter-item-main">
-                        <Zap size={18} className="meter-meter-item-icon" />
-                        <div className="meter-meter-item-info">
-                          <div className="meter-meter-item-header">
-                            <div className="meter-meter-item-name">{meter.name}</div>
-                            <div className={`meter-meter-item-status ${meter.status.toLowerCase()}`}>
-                              {meter.status === 'ONLINE' ? <Wifi size={12} /> : <WifiOff size={12} />}
-                              <span>{meter.status}</span>
-                            </div>
-                          </div>
-                          <div className="meter-meter-item-details">
-                            <span className="meter-meter-item-id">ID: {meter.id}</span>
-                            {meter.location && (
-                              <>
-                                <span className="meter-meter-item-separator">•</span>
-                                <span className="meter-meter-item-location">
-                                  <MapPin size={11} />
-                                  {meter.location}
-                                </span>
-                              </>
-                            )}
-                            {meter.lastReading && (
-                              <>
-                                <span className="meter-meter-item-separator">•</span>
-                                <span className="meter-meter-item-reading">
-                                  <Clock size={11} />
-                                  {formatLastReading(meter.lastReading.timestamp)}
-                                </span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="meter-meter-item-footer">
-                        {isAssociated ? (
-                          <>
-                            <div className="meter-meter-item-user">
-                              <UsersRound size={14} />
-                              <span>{meter.associatedUserEmail}</span>
-                            </div>
-                            <button
-                              className="meter-meter-item-disassociate"
-                              onClick={() => meter.associatedUserId && handleDisassociateMeter(meter.id, meter.associatedUserId)}
-                              title="Desassociar medidor"
-                            >
-                              <Unlink size={14} />
-                              <span>Remover</span>
-                            </button>
-                          </>
-                        ) : (
-                          <div className="meter-meter-item-available">
-                            <Plus size={14} />
-                            <span>Disponível para associação</span>
-                          </div>
-                        )}
+              <div className="meter-meters-sections">
+                {/* Seção de Medidores Online */}
+                {filteredMeters.filter(m => m.status === 'ONLINE').length > 0 && (
+                  <div className="meter-status-section">
+                    <div className="meter-status-section-header online">
+                      <div className="meter-status-section-title">
+                        <Wifi size={18} />
+                        <h3>Medidores Online</h3>
+                        <span className="meter-status-count">
+                          {filteredMeters.filter(m => m.status === 'ONLINE').length}
+                        </span>
                       </div>
                     </div>
-                  );
-                })}
+                    <div className="meter-status-section-list">
+                      {filteredMeters
+                        .filter(m => m.status === 'ONLINE')
+                        .map(meter => {
+                          const isAssociated = !!meter.associatedUserId;
+                          const [selectedUserForMeter, setSelectedUserForMeter] = useState<number | null>(null);
+
+                          return (
+                            <div
+                              key={meter.id}
+                              className={`meter-meter-card ${isAssociated ? 'associated' : 'available'} online`}
+                            >
+                              <div className="meter-meter-card-header">
+                                <div className="meter-meter-card-icon-wrapper">
+                                  <Zap size={20} className="meter-meter-card-icon" />
+                                  <div className={`meter-meter-status-badge online`}>
+                                    <Wifi size={12} />
+                                  </div>
+                                </div>
+                                <div className="meter-meter-card-info">
+                                  <div className="meter-meter-card-name">{meter.name}</div>
+                                  <div className="meter-meter-card-details">
+                                    <span className="meter-meter-card-id">ID: {meter.id}</span>
+                                    {meter.location && (
+                                      <>
+                                        <span className="meter-meter-card-separator">•</span>
+                                        <span className="meter-meter-card-location">
+                                          <MapPin size={11} />
+                                          {meter.location}
+                                        </span>
+                                      </>
+                                    )}
+                                    {meter.lastReading && (
+                                      <>
+                                        <span className="meter-meter-card-separator">•</span>
+                                        <span className="meter-meter-card-reading">
+                                          <Clock size={11} />
+                                          {formatLastReading(meter.lastReading.timestamp)}
+                                        </span>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="meter-meter-card-footer">
+                                {isAssociated ? (
+                                  <div className="meter-meter-card-associated">
+                                    <div className="meter-meter-card-user-info">
+                                      <UsersRound size={14} />
+                                      <span className="meter-meter-card-user-email">{meter.associatedUserEmail}</span>
+                                    </div>
+                                    <button
+                                      className="meter-meter-card-disassociate-btn"
+                                      onClick={() => meter.associatedUserId && handleDisassociateMeter(meter.id, meter.associatedUserId)}
+                                      title="Desassociar medidor"
+                                    >
+                                      <Unlink size={14} />
+                                      <span>Remover</span>
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <div className="meter-meter-card-available">
+                                    <div className="meter-meter-card-associate-controls">
+                                      {selectedUserId === null ? (
+                                        <>
+                                          <div className="meter-meter-card-available-label">
+                                            <Plus size={14} />
+                                            <span>Disponível para associação</span>
+                                          </div>
+                                          <button
+                                            className="meter-meter-card-associate-btn"
+                                            onClick={() => setSelectedUserForMeter(prev => ({ ...prev, [meter.id]: 0 }))}
+                                            title="Associar medidor a um usuário"
+                                          >
+                                            <Link2 size={14} />
+                                            <span>Associar</span>
+                                          </button>
+                                        </>
+                                      ) : (
+                                        <div className="meter-meter-card-user-selector">
+                                          <select
+                                            className="meter-meter-card-user-select"
+                                            value={selectedUserId || ''}
+                                            onChange={(e) => setSelectedUserForMeter(prev => ({ ...prev, [meter.id]: Number(e.target.value) || null }))}
+                                          >
+                                            <option value="">Selecione um usuário...</option>
+                                            {regularUsers
+                                              .filter(u => u.rooms && u.rooms.length > 0)
+                                              .map(user => (
+                                                <option key={user.id} value={user.id}>
+                                                  {user.email} ({user.rooms?.join(', ')})
+                                                </option>
+                                              ))}
+                                          </select>
+                                          <div className="meter-meter-card-associate-actions">
+                                            <button
+                                              className="meter-meter-card-confirm-btn"
+                                              onClick={() => {
+                                                if (selectedUserId) {
+                                                  handleAssociateMeter(selectedUserId, meter.id);
+                                                  setSelectedUserForMeter(prev => {
+                                                    const newState = { ...prev };
+                                                    delete newState[meter.id];
+                                                    return newState;
+                                                  });
+                                                }
+                                              }}
+                                              disabled={!selectedUserId}
+                                            >
+                                              <Link2 size={14} />
+                                              <span>Confirmar</span>
+                                            </button>
+                                            <button
+                                              className="meter-meter-card-cancel-btn"
+                                              onClick={() => setSelectedUserForMeter(prev => {
+                                                const newState = { ...prev };
+                                                delete newState[meter.id];
+                                                return newState;
+                                              })}
+                                            >
+                                              <X size={14} />
+                                              <span>Cancelar</span>
+                                            </button>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Seção de Medidores Offline */}
+                {filteredMeters.filter(m => m.status === 'OFFLINE').length > 0 && (
+                  <div className="meter-status-section">
+                    <div className="meter-status-section-header offline">
+                      <div className="meter-status-section-title">
+                        <WifiOff size={18} />
+                        <h3>Medidores Offline</h3>
+                        <span className="meter-status-count">
+                          {filteredMeters.filter(m => m.status === 'OFFLINE').length}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="meter-status-section-list">
+                      {filteredMeters
+                        .filter(m => m.status === 'OFFLINE')
+                        .map(meter => {
+                          const isAssociated = !!meter.associatedUserId;
+                          const selectedUserId = selectedUserForMeter[meter.id] || null;
+
+                          return (
+                            <div
+                              key={meter.id}
+                              className={`meter-meter-card ${isAssociated ? 'associated' : 'available'} offline`}
+                            >
+                              <div className="meter-meter-card-header">
+                                <div className="meter-meter-card-icon-wrapper">
+                                  <Zap size={20} className="meter-meter-card-icon" />
+                                  <div className={`meter-meter-status-badge offline`}>
+                                    <WifiOff size={12} />
+                                  </div>
+                                </div>
+                                <div className="meter-meter-card-info">
+                                  <div className="meter-meter-card-name">{meter.name}</div>
+                                  <div className="meter-meter-card-details">
+                                    <span className="meter-meter-card-id">ID: {meter.id}</span>
+                                    {meter.location && (
+                                      <>
+                                        <span className="meter-meter-card-separator">•</span>
+                                        <span className="meter-meter-card-location">
+                                          <MapPin size={11} />
+                                          {meter.location}
+                                        </span>
+                                      </>
+                                    )}
+                                    {meter.lastReading && (
+                                      <>
+                                        <span className="meter-meter-card-separator">•</span>
+                                        <span className="meter-meter-card-reading">
+                                          <Clock size={11} />
+                                          {formatLastReading(meter.lastReading.timestamp)}
+                                        </span>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="meter-meter-card-footer">
+                                {isAssociated ? (
+                                  <div className="meter-meter-card-associated">
+                                    <div className="meter-meter-card-user-info">
+                                      <UsersRound size={14} />
+                                      <span className="meter-meter-card-user-email">{meter.associatedUserEmail}</span>
+                                    </div>
+                                    <button
+                                      className="meter-meter-card-disassociate-btn"
+                                      onClick={() => meter.associatedUserId && handleDisassociateMeter(meter.id, meter.associatedUserId)}
+                                      title="Desassociar medidor"
+                                    >
+                                      <Unlink size={14} />
+                                      <span>Remover</span>
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <div className="meter-meter-card-available">
+                                    <div className="meter-meter-card-associate-controls">
+                                      {selectedUserId === null ? (
+                                        <>
+                                          <div className="meter-meter-card-available-label">
+                                            <Plus size={14} />
+                                            <span>Disponível para associação</span>
+                                          </div>
+                                          <button
+                                            className="meter-meter-card-associate-btn"
+                                            onClick={() => setSelectedUserForMeter(prev => ({ ...prev, [meter.id]: 0 }))}
+                                            title="Associar medidor a um usuário"
+                                          >
+                                            <Link2 size={14} />
+                                            <span>Associar</span>
+                                          </button>
+                                        </>
+                                      ) : (
+                                        <div className="meter-meter-card-user-selector">
+                                          <select
+                                            className="meter-meter-card-user-select"
+                                            value={selectedUserId || ''}
+                                            onChange={(e) => setSelectedUserForMeter(prev => ({ ...prev, [meter.id]: Number(e.target.value) || null }))}
+                                          >
+                                            <option value="">Selecione um usuário...</option>
+                                            {regularUsers
+                                              .filter(u => u.rooms && u.rooms.length > 0)
+                                              .map(user => (
+                                                <option key={user.id} value={user.id}>
+                                                  {user.email} ({user.rooms?.join(', ')})
+                                                </option>
+                                              ))}
+                                          </select>
+                                          <div className="meter-meter-card-associate-actions">
+                                            <button
+                                              className="meter-meter-card-confirm-btn"
+                                              onClick={() => {
+                                                if (selectedUserId) {
+                                                  handleAssociateMeter(selectedUserId, meter.id);
+                                                  setSelectedUserForMeter(prev => {
+                                                    const newState = { ...prev };
+                                                    delete newState[meter.id];
+                                                    return newState;
+                                                  });
+                                                }
+                                              }}
+                                              disabled={!selectedUserId}
+                                            >
+                                              <Link2 size={14} />
+                                              <span>Confirmar</span>
+                                            </button>
+                                            <button
+                                              className="meter-meter-card-cancel-btn"
+                                              onClick={() => setSelectedUserForMeter(prev => {
+                                                const newState = { ...prev };
+                                                delete newState[meter.id];
+                                                return newState;
+                                              })}
+                                            >
+                                              <X size={14} />
+                                              <span>Cancelar</span>
+                                            </button>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="meter-empty-state">

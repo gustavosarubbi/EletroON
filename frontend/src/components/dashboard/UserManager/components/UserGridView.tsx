@@ -13,6 +13,7 @@ interface UserGridViewProps {
   editingUserId: number | null;
   showPasswords: { [key: number]: boolean };
   editData: { [key: number]: { email: string; password: string } };
+  originalPasswords: { [key: number]: string };
   onSelectAll: () => void;
   onSelectUser: (userId: number) => void;
   onEditUser: (userId: number) => void;
@@ -34,6 +35,7 @@ const UserGridView: React.FC<UserGridViewProps> = ({
   editingUserId,
   showPasswords,
   editData,
+  originalPasswords,
   onSelectAll,
   onSelectUser,
   onEditUser,
@@ -93,6 +95,7 @@ const UserGridView: React.FC<UserGridViewProps> = ({
             isEditing={editingUserId === user.id}
             editData={editData[user.id]}
             showPassword={showPasswords[user.id] || false}
+            originalPassword={originalPasswords[user.id]}
             onSelect={() => onSelectUser(user.id)}
             onEditChange={(data) => onEditChange(user.id, data)}
             onSave={() => onSaveUser(user.id)}

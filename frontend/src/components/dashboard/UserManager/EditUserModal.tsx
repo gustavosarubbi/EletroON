@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Mail, Lock, Save, Building2 } from 'lucide-react';
+import { X, Mail, Lock, Save, Building2, Plus, Trash2 } from 'lucide-react';
 import { UserData, EditUserData } from './types';
 
 interface EditUserModalProps {
@@ -12,10 +12,20 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, onSave, onClose }) 
   const [formData, setFormData] = useState<EditUserData>({
     email: user.email,
     password: '',
-    room: user.room || ''
+    rooms: user.rooms || []
   });
+  const [newRoomInput, setNewRoomInput] = useState('');
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Atualizar formData quando o user prop mudar
+  useEffect(() => {
+    setFormData({
+      email: user.email,
+      password: '',
+      rooms: user.rooms || []
+    });
+  }, [user.id, user.email, user.rooms]);
 
   const MIN_PASSWORD_LENGTH = 6;
   const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -67,23 +77,52 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, onSave, onClose }) 
 
     setIsSubmitting(true);
     try {
-      onSave(formData);
+      await onSave(formData);
+      // O onSave fecha o modal através do setEditingUserId(null)
     } catch (error) {
       console.error('Erro ao salvar usuário:', error);
+      // Manter o modal aberto em caso de erro para o usuário poder tentar novamente
+      // O isSubmitting será resetado no finally
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const handleAddRoom = () => {
+    if (newRoomInput.trim() && !formData.rooms?.includes(newRoomInput.trim())) {
+      setFormData({
+        ...formData,
+        rooms: [...(formData.rooms || []), newRoomInput.trim()]
+      });
+      setNewRoomInput('');
+    }
+  };
+
+  const handleRemoveRoom = (index: number) => {
+    const updatedRooms = [...(formData.rooms || [])];
+    updatedRooms.splice(index, 1);
+    setFormData({
+      ...formData,
+      rooms: updatedRooms
+    });
+  };
+
+  const handleRoomInputKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddRoom();
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
+    if (e.key === 'Escape' && !isSubmitting) {
       onClose();
     }
   };
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+      if (e.key === 'Escape' && !isSubmitting) {
         onClose();
       }
     };
@@ -92,10 +131,16 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, onSave, onClose }) 
     return () => {
       document.removeEventListener('keydown', handleEscape);
     };
-  }, [onClose]);
+  }, [onClose, isSubmitting]);
+
+  const handleOverlayClick = (e: React.MouseEvent) => {
+    if (!isSubmitting && e.target === e.currentTarget) {
+      onClose();
+    }
+  };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={handleOverlayClick}>
       <div 
         className="modal-content-modern edit-user-modal" 
         onClick={(e) => e.stopPropagation()}
@@ -155,23 +200,56 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, onSave, onClose }) 
               )}
             </div>
 
-            <div className="form-group-modern">
-              <label htmlFor="edit-room">
-                <Building2 size={14} />
-                <span>Sala</span>
-                <span className="optional-label">(opcional)</span>
-              </label>
-              <input
-                id="edit-room"
-                type="text"
-                value={formData.room || ''}
-                onChange={(e) => setFormData({ ...formData, room: e.target.value })}
-                placeholder="Ex: Sala 101, Laboratório A, etc."
-              />
-              <span className="help-text">
-                Ao alterar a sala, todos os medidores associados terão sua localização atualizada
-              </span>
-            </div>
+            {user.role === 'user' && (
+              <div className="form-group-modern">
+                <label htmlFor="edit-rooms">
+                  <Building2 size={14} />
+                  <span>Salas</span>
+                </label>
+                <div className="rooms-input-container">
+                  <div className="rooms-input-wrapper">
+                    <input
+                      id="edit-rooms"
+                      type="text"
+                      value={newRoomInput}
+                      onChange={(e) => setNewRoomInput(e.target.value)}
+                      onKeyPress={handleRoomInputKeyPress}
+                      placeholder="Digite o nome da sala e pressione Enter"
+                    />
+                    <button
+                      type="button"
+                      className="btn-add-room"
+                      onClick={handleAddRoom}
+                      disabled={!newRoomInput.trim() || formData.rooms?.includes(newRoomInput.trim())}
+                      title="Adicionar sala"
+                    >
+                      <Plus size={16} />
+                    </button>
+                  </div>
+                  {formData.rooms && formData.rooms.length > 0 && (
+                    <div className="rooms-list">
+                      {formData.rooms.map((room, index) => (
+                        <div key={index} className="room-tag">
+                          <Building2 size={14} />
+                          <span>{room}</span>
+                          <button
+                            type="button"
+                            className="btn-remove-room"
+                            onClick={() => handleRemoveRoom(index)}
+                            title="Remover sala"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <span className="help-text">
+                  Adicione ou remova salas. Ao alterar as salas, todos os medidores associados terão sua localização atualizada
+                </span>
+              </div>
+            )}
           </div>
 
           <div className="modal-footer-modern">

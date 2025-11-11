@@ -1,6 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { createPortal } from 'react-dom';
-import { Mail, Clock, Zap, Edit3, Trash2, Eye, EyeOff, CheckSquare, Square, X, Building2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { Mail, Clock, Zap, Edit3, Trash2, Eye, EyeOff, CheckSquare, Square, Copy, Check } from 'lucide-react';
 import { UserData } from '../types';
 
 interface UserTableRowProps {
@@ -8,6 +7,7 @@ interface UserTableRowProps {
   isSelected: boolean;
   isEditing: boolean;
   showPassword: boolean;
+  originalPassword?: string;
   onSelect: () => void;
   onEdit: () => void;
   onDelete: () => void;
@@ -19,95 +19,18 @@ const UserTableRow: React.FC<UserTableRowProps> = ({
   isSelected,
   isEditing,
   showPassword,
+  originalPassword,
   onSelect,
   onEdit,
   onDelete,
   onTogglePassword,
 }) => {
-  const [passwordPopoverPosition, setPasswordPopoverPosition] = useState<{ top: number; left: number } | null>(null);
-  const passwordButtonRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    const updatePosition = () => {
-      if (showPassword && passwordButtonRef.current) {
-        const rect = passwordButtonRef.current.getBoundingClientRect();
-        setPasswordPopoverPosition({
-          top: rect.bottom + 8,
-          left: rect.left
-        });
-      } else {
-        setPasswordPopoverPosition(null);
-      }
-    };
-
-    if (showPassword) {
-      // Pequeno delay para garantir que o DOM está atualizado
-      const timeoutId = setTimeout(updatePosition, 10);
-      
-      window.addEventListener('scroll', updatePosition);
-      window.addEventListener('resize', updatePosition);
-      
-      return () => {
-        clearTimeout(timeoutId);
-        window.removeEventListener('scroll', updatePosition);
-        window.removeEventListener('resize', updatePosition);
-      };
-    } else {
-      setPasswordPopoverPosition(null);
-    }
-  }, [showPassword]);
-
-  useEffect(() => {
-    if (showPassword && passwordPopoverPosition) {
-      const handleClickOutside = (event: MouseEvent) => {
-        const target = event.target as HTMLElement;
-        if (!target.closest('.password-popover') && !target.closest('.password-toggle')) {
-          onTogglePassword();
-        }
-      };
-      
-      // Pequeno delay para evitar fechar imediatamente ao abrir
-      setTimeout(() => {
-        document.addEventListener('mousedown', handleClickOutside);
-      }, 100);
-      
-      return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
-      };
-    }
-  }, [showPassword, passwordPopoverPosition, onTogglePassword]);
-
-  const popoverContent = showPassword && passwordPopoverPosition ? (
-    <div
-      className="password-popover"
-      style={{
-        position: 'fixed',
-        top: `${passwordPopoverPosition.top}px`,
-        left: `${passwordPopoverPosition.left}px`,
-        zIndex: 10000,
-      }}
-    >
-      <div className="password-popover-content">
-        <div className="password-popover-header">
-          <span>Senha do Usuário</span>
-          <button
-            className="password-popover-close"
-            onClick={onTogglePassword}
-            aria-label="Fechar"
-          >
-            <X size={14} />
-          </button>
-        </div>
-        <div className="password-popover-body">
-          <code className="password-value">{user.password || 'N/A'}</code>
-        </div>
-      </div>
-    </div>
-  ) : null;
+  const [copied, setCopied] = useState(false);
+  // Usar senha original se disponível, caso contrário usar a senha do user (hasheada)
+  const displayPassword = originalPassword || user.password || 'N/A';
 
   return (
-    <>
-      <tr className={`table-row-modern ${isSelected ? 'table-row-selected' : ''} ${isEditing ? 'table-row-editing' : ''}`}>
+    <tr className={`table-row-modern ${isSelected ? 'table-row-selected' : ''} ${isEditing ? 'table-row-editing' : ''}`}>
         <td className="table-checkbox-column">
           <div className="table-cell-item">
             <button 
@@ -135,9 +58,27 @@ const UserTableRow: React.FC<UserTableRowProps> = ({
         </td>
         <td className="table-password-column">
           <div className="table-cell-item">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', position: 'relative' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', position: 'relative', minWidth: 0, width: '100%' }}>
+              {displayPassword && displayPassword !== 'N/A' && (
+                <button
+                  className="table-action-btn-icon copy-password"
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    try {
+                      await navigator.clipboard.writeText(displayPassword);
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    } catch (error) {
+                      console.error('Erro ao copiar senha:', error);
+                    }
+                  }}
+                  title={copied ? 'Copiado!' : 'Copiar senha'}
+                  aria-label="Copiar senha"
+                >
+                  {copied ? <Check size={12} /> : <Copy size={12} />}
+                </button>
+              )}
               <button
-                ref={passwordButtonRef}
                 className="table-action-btn-icon password-toggle"
                 onClick={onTogglePassword}
                 title={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
@@ -146,7 +87,7 @@ const UserTableRow: React.FC<UserTableRowProps> = ({
                 {showPassword ? <EyeOff size={12} /> : <Eye size={12} />}
               </button>
               <span className="password-label">
-                {showPassword ? 'Ocultar' : 'Mostrar'}
+                {showPassword ? displayPassword : 'Mostrar'}
               </span>
             </div>
           </div>
@@ -160,10 +101,20 @@ const UserTableRow: React.FC<UserTableRowProps> = ({
       </td>
       <td className="table-room-column">
         <div className="table-cell-item">
-          {user.room ? (
-            <div className="table-cell-room" title={user.room}>
-              <Building2 size={16} aria-hidden="true" />
-              <span className="table-cell-text">{user.room}</span>
+          {user.rooms && user.rooms.length > 0 ? (
+            <div className="table-cell-rooms" title={user.rooms.join(', ')}>
+              <div className="rooms-badges">
+                {user.rooms.length === 1 ? (
+                  <span className="room-badge">{user.rooms[0]}</span>
+                ) : (
+                  <>
+                    <span className="room-badge">{user.rooms[0]}</span>
+                    <span className="room-badge-more" title={`Mais ${user.rooms.length - 1} sala${user.rooms.length - 1 > 1 ? 's' : ''}: ${user.rooms.slice(1).join(', ')}`}>
+                      +{user.rooms.length - 1}
+                    </span>
+                  </>
+                )}
+              </div>
             </div>
           ) : (
             <span className="table-cell-empty">—</span>
@@ -210,8 +161,6 @@ const UserTableRow: React.FC<UserTableRowProps> = ({
         </div>
       </td>
     </tr>
-      {popoverContent && createPortal(popoverContent, document.body)}
-    </>
   );
 };
 

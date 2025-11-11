@@ -366,9 +366,9 @@ export const dashboardService = {
   },
 
   // Criar usuário
-  async createUser(email: string, password: string, role: string = 'USER', room?: string): Promise<User> {
+  async createUser(email: string, password: string, role: string = 'USER', rooms?: string[]): Promise<User> {
     try {
-      const response = await api.post('/admin/users', { email, password, role, room });
+      const response = await api.post('/admin/users', { email, password, role, rooms });
       return response.data;
     } catch (error) {
       console.error('Erro ao criar usuário:', error);
@@ -377,12 +377,97 @@ export const dashboardService = {
   },
 
   // Atualizar usuário
-  async updateUser(userId: number, email?: string, password?: string, room?: string): Promise<User> {
+  async updateUser(userId: number, email?: string, password?: string, rooms?: string[]): Promise<User> {
     try {
-      const response = await api.patch(`/admin/users/${userId}`, { email, password, room });
+      const response = await api.patch(`/admin/users/${userId}`, { email, password, rooms });
       return response.data;
     } catch (error) {
       console.error('Erro ao atualizar usuário:', error);
+      throw error;
+    }
+  },
+
+  // Adicionar sala ao usuário
+  async addRoomToUser(userId: number, roomName: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const response = await api.post(`/admin/users/${userId}/rooms`, { roomName });
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao adicionar sala:', error);
+      throw error;
+    }
+  },
+
+  // Remover sala do usuário
+  async removeRoomFromUser(userId: number, roomName: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const response = await api.delete(`/admin/users/${userId}/rooms`, { data: { roomName } });
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao remover sala:', error);
+      throw error;
+    }
+  },
+
+  // Buscar dispositivos do usuário logado
+  async getMyDevices(page: number = 1, limit: number = 100): Promise<{ data: Device[]; meta: any }> {
+    try {
+      const response = await api.get(`/eletroon/my-devices?page=${page}&limit=${limit}`);
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao buscar dispositivos do usuário:', error);
+      throw error;
+    }
+  },
+
+  // Calcular consumo total de múltiplos medidores em um período
+  async calculateConsumption(
+    meterIds: number[],
+    startDate: Date,
+    endDate: Date
+  ): Promise<{ totalConsumption: number; readings: Reading[] }> {
+    try {
+      const readings = await this.getMultipleDevicesReadingsByPeriod(meterIds, startDate, endDate, 10000);
+      
+      if (readings.length === 0) {
+        return { totalConsumption: 0, readings: [] };
+      }
+
+      // Agrupar leituras por medidor
+      const readingsByMeter = new Map<number, Reading[]>();
+      readings.forEach(reading => {
+        if (!readingsByMeter.has(reading.meterId)) {
+          readingsByMeter.set(reading.meterId, []);
+        }
+        readingsByMeter.get(reading.meterId)!.push(reading);
+      });
+
+      let totalConsumption = 0;
+
+      // Calcular consumo para cada medidor
+      readingsByMeter.forEach((meterReadings, meterId) => {
+        // Ordenar por timestamp
+        const sorted = meterReadings.sort((a, b) => 
+          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+        );
+
+        if (sorted.length > 0) {
+          // Calcular diferença entre primeira e última leitura de energia acumulada
+          const firstReading = sorted[0];
+          const lastReading = sorted[sorted.length - 1];
+          
+          const firstEnergy = firstReading.ept_c || 0;
+          const lastEnergy = lastReading.ept_c || 0;
+          
+          // Consumo é a diferença (sempre positiva)
+          const meterConsumption = Math.max(0, lastEnergy - firstEnergy);
+          totalConsumption += meterConsumption;
+        }
+      });
+
+      return { totalConsumption, readings };
+    } catch (error) {
+      console.error('Erro ao calcular consumo:', error);
       throw error;
     }
   },

@@ -25,9 +25,11 @@ export const useUserManager = () => {
     email: '', 
     password: '', 
     role: 'user',
-    room: ''
+    rooms: []
   });
   const [editData, setEditData] = useState<{ [key: number]: EditUserData }>({});
+  // Armazenar senhas originais (não hasheadas) para exibição
+  const [originalPasswords, setOriginalPasswords] = useState<{ [key: number]: string }>({});
 
   // Carregar dados
   const loadUsersData = async () => {
@@ -86,7 +88,7 @@ export const useUserManager = () => {
     if (user) {
       setEditData({
         ...editData,
-        [userId]: { email: user.email, password: '', room: user.room || '' }
+        [userId]: { email: user.email, password: '', rooms: user.rooms || [] }
       });
       setEditingUserId(userId);
     }
@@ -96,12 +98,25 @@ export const useUserManager = () => {
     const form = editData[userId];
     if (form && form.email) {
       try {
-        await dashboardService.updateUser(userId, form.email, form.password, form.room);
+        // Se uma nova senha foi fornecida, armazenar a senha original antes de enviar
+        if (form.password && form.password.trim() !== '') {
+          setOriginalPasswords(prev => ({
+            ...prev,
+            [userId]: form.password
+          }));
+        }
+        await dashboardService.updateUser(userId, form.email, form.password, form.rooms);
         await loadUsersData(); // Recarregar dados após atualização
         const newEditData = { ...editData };
         delete newEditData[userId];
         setEditData(newEditData);
         setEditingUserId(null);
+        // Resetar o estado de visualização de senha para o usuário atualizado
+        setShowPasswords(prev => {
+          const newState = { ...prev };
+          delete newState[userId];
+          return newState;
+        });
       } catch (error) {
         console.error('Erro ao salvar usuário:', error);
         throw error;
@@ -147,20 +162,27 @@ export const useUserManager = () => {
       return;
     }
     
-    // Sala é obrigatória apenas para usuários regulares
-    if (newUser.role === 'user' && !newUser.room?.trim()) {
+    // Pelo menos uma sala é obrigatória para usuários regulares
+    if (newUser.role === 'user' && (!newUser.rooms || newUser.rooms.length === 0)) {
       return;
     }
     
     try {
-      await dashboardService.createUser(
+      const createdUser = await dashboardService.createUser(
         newUser.email,
         newUser.password,
         newUser.role === 'admin' ? 'ADMIN' : 'USER',
-        newUser.role === 'admin' ? undefined : newUser.room
+        newUser.role === 'admin' ? undefined : newUser.rooms
       );
+      // Armazenar a senha original do novo usuário
+      if (createdUser && createdUser.id) {
+        setOriginalPasswords(prev => ({
+          ...prev,
+          [createdUser.id]: newUser.password
+        }));
+      }
       await loadUsersData(); // Recarregar dados após criação
-      setNewUser({ email: '', password: '', role: 'user', room: '' });
+      setNewUser({ email: '', password: '', role: 'user', rooms: [] });
       setShowAddForm(false);
     } catch (error) {
       console.error('Erro ao adicionar usuário:', error);
@@ -224,10 +246,10 @@ export const useUserManager = () => {
         if (sortConfig.key === 'devices') {
           aValue = a.devices.length;
           bValue = b.devices.length;
-        } else if (sortConfig.key === 'room') {
-          // Tratar room (pode ser null ou undefined)
-          aValue = a.room || '';
-          bValue = b.room || '';
+        } else if (sortConfig.key === 'rooms') {
+          // Tratar rooms (array de strings)
+          aValue = (a.rooms && a.rooms.length > 0) ? a.rooms.join(', ') : '';
+          bValue = (b.rooms && b.rooms.length > 0) ? b.rooms.join(', ') : '';
         } else {
           aValue = a[sortConfig.key as keyof UserData];
           bValue = b[sortConfig.key as keyof UserData];
@@ -362,6 +384,7 @@ export const useUserManager = () => {
     expandedRows,
     newUser,
     editData,
+    originalPasswords,
     filteredUsers,
     sortedUsers,
     paginatedUsers,
@@ -400,5 +423,7 @@ export const useUserManager = () => {
     setNewUser,
     setEditData,
     setSelectedUsers,
+    setShowPasswords,
+    setOriginalPasswords,
   };
 };

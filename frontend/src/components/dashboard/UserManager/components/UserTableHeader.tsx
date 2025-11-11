@@ -86,15 +86,15 @@ const UserTableHeader: React.FC<UserTableHeaderProps> = ({
           </div>
         </th>
         <th 
-          className={`table-sortable table-room-column ${sortConfig?.key === 'room' ? 'active' : ''}`}
-          onClick={() => onSort('room')}
+          className={`table-sortable table-room-column ${sortConfig?.key === 'rooms' ? 'active' : ''}`}
+          onClick={() => onSort('rooms')}
           role="columnheader"
-          aria-sort={sortConfig?.key === 'room' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
+          aria-sort={sortConfig?.key === 'rooms' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
         >
           <div className="sort-header">
             <Building2 size={14} />
-            <span>Sala</span>
-            {getSortIcon('room')}
+            <span>Salas</span>
+            {getSortIcon('rooms')}
           </div>
         </th>
         <th 

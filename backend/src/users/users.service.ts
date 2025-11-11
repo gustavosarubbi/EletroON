@@ -59,18 +59,15 @@ export class UsersService {
     });
   }
 
-  async create(email: string, password: string, role: string = 'USER', room?: string) {
+  async create(email: string, password: string, role: string = 'USER') {
     // Normalizar email para lowercase
     const normalizedEmail = email.toLowerCase().trim();
     const hashedPassword = await bcrypt.hash(password, 10);
-    // Normalizar sala: trim mas manter o case original (validação de duplicata é feita no admin.service)
-    const normalizedRoom = room?.trim() || null;
     return this.prisma.user.create({
       data: {
         email: normalizedEmail,
         password: hashedPassword,
         role,
-        room: normalizedRoom,
       },
     });
   }

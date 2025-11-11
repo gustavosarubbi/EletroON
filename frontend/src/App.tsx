@@ -6,6 +6,7 @@ import DashboardPage from './pages/DashboardPage';
 import UserManagementPage from './pages/UserManagementPage';
 import RoomChartsPage from './pages/RoomChartsPage';
 import MeterManagementPage from './pages/MeterManagementPage';
+import UserEnergyPage from './pages/UserEnergyPage';
 import './styles/index.css';
 
 
@@ -18,7 +19,7 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/dashboard" element={
               <ProtectedRoute>
-                <DashboardPage />
+                <UserEnergyPage />
               </ProtectedRoute>
             } />
             <Route path="/admin/dashboard" element={

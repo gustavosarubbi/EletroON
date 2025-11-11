@@ -12,10 +12,11 @@ model User {
   email     String   @unique
   password  String
   role      String   @default("USER")
-  room      String?
+  room      String?  // Mantido para compatibilidade durante migração
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   devices   Device[]
+  rooms     UserRoom[]
 }
 
 model Device {
@@ -68,4 +69,25 @@ model Reading {
 
   @@index([meterId, timestamp])
   @@index([timestamp])
+}
+
+model Room {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  users     UserRoom[]
+}
+
+model UserRoom {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  roomId    Int
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roomId])
+  @@index([userId])
+  @@index([roomId])
 }

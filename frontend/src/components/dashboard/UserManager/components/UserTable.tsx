@@ -14,6 +14,7 @@ interface UserTableProps {
   totalItems: number;
   editingUserId: number | null;
   showPasswords: { [key: number]: boolean };
+  originalPasswords: { [key: number]: string };
   onSort: (key: SortKey) => void;
   onSelectAll: () => void;
   onSelectUser: (userId: number) => void;
@@ -32,6 +33,7 @@ const UserTable: React.FC<UserTableProps> = ({
   totalItems,
   editingUserId,
   showPasswords,
+  originalPasswords,
   onSort,
   onSelectAll,
   onSelectUser,
@@ -59,6 +61,7 @@ const UserTable: React.FC<UserTableProps> = ({
                 isSelected={selectedUsers.includes(user.id)}
                 isEditing={editingUserId === user.id}
                 showPassword={showPasswords[user.id] || false}
+                originalPassword={originalPasswords[user.id]}
                 onSelect={() => onSelectUser(user.id)}
                 onEdit={() => onEditUser(user.id)}
                 onDelete={() => onDeleteUser(user.id)}

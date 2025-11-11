@@ -259,13 +259,19 @@ const Chart: React.FC<ChartProps> = ({ data, title, height = 300, type = 'line' 
   };
 
   const renderChart = () => {
+    // Remover a propriedade 'type' dos datasets para evitar conflitos de tipo
+    const cleanData = {
+      ...data,
+      datasets: data.datasets.map(({ type, ...dataset }) => dataset)
+    };
+
     switch (type) {
       case 'bar':
-        return <Bar ref={chartRef as any} data={data} options={options} />;
+        return <Bar ref={chartRef as any} data={cleanData} options={options} />;
       case 'doughnut':
-        return <Doughnut ref={chartRef as any} data={data} options={doughnutOptions} />;
+        return <Doughnut ref={chartRef as any} data={cleanData} options={doughnutOptions} />;
       default:
-        return <Line ref={chartRef as any} data={data} options={options} />;
+        return <Line ref={chartRef as any} data={cleanData} options={options} />;
     }
   };
 

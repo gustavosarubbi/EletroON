@@ -108,7 +108,7 @@ const AddUserForm: React.FC<AddUserFormProps> = ({
                   onChange={(e) => setNewRoomInput(e.target.value)}
                   onKeyPress={handleRoomInputKeyPress}
                   placeholder="Digite o nome da sala e pressione Enter"
-                  disabled={newUser.role === 'admin'}
+                  disabled={newUser.role !== 'user'}
                 />
                 <button
                   type="button"

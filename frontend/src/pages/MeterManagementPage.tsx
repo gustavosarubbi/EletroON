@@ -54,7 +54,7 @@ const MeterManagementPage: React.FC = () => {
     }
   };
 
-  const handleDisassociateMeter = async (userId: number, meterId: number) => {
+  const handleDisassociateMeter = async (_userId: number, meterId: number) => {
     try {
       await dashboardService.disassociateMeterFromUser(meterId);
       // Recarregar dados para garantir sincronização

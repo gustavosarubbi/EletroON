@@ -445,7 +445,7 @@ export const dashboardService = {
       let totalConsumption = 0;
 
       // Calcular consumo para cada medidor
-      readingsByMeter.forEach((meterReadings, meterId) => {
+      readingsByMeter.forEach((meterReadings) => {
         // Ordenar por timestamp
         const sorted = meterReadings.sort((a, b) => 
           new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()

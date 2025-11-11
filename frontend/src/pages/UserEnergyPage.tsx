@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { dashboardService } from '../services/dashboardService';
-import { Device, Reading } from '../types/dashboard';
+import { Device } from '../types/dashboard';
 import { Zap, Calendar, DollarSign, TrendingUp } from 'lucide-react';
 import LoginParticles from '../components/ui/LoginParticles';
 import LoadingOverlay from '../components/ui/LoadingOverlay';

@@ -723,19 +723,19 @@ const RoomChartsPage: React.FC = () => {
         } else if (selectedDeviceIds.length > 1) {
           data = dataSource.map((r, idx) => (idx === 0 ? 0 : ((r as any).gasto_total ?? 0)));
         } else {
-          const firstImport = dataSource[0]?.ept_c ?? 0;
-          const firstGeneration = dataSource[0]?.ept_g ?? 0;
+          const firstImport = Number(dataSource[0]?.ept_c ?? 0);
+          const firstGeneration = Number(dataSource[0]?.ept_g ?? 0);
 
           data = dataSource.map((r, idx) => {
             if (idx === 0) return 0;
 
-            const currentImport = r.ept_c ?? firstImport;
-            const currentGeneration = r.ept_g ?? firstGeneration;
+            const currentImport = Number(r.ept_c ?? firstImport);
+            const currentGeneration = Number(r.ept_g ?? firstGeneration);
             let importDelta = currentImport - firstImport;
             let generationDelta = currentGeneration - firstGeneration;
 
             const hasGenerationEvidence =
-              generationDelta > 0 || (r.pt ?? 0) < 0;
+              generationDelta > 0 || (Number(r.pt ?? 0)) < 0;
 
             const importReset =
               firstImport > 0 &&
@@ -767,12 +767,12 @@ const RoomChartsPage: React.FC = () => {
         } else if (selectedDeviceIds.length > 1) {
           data = dataSource.map((r, idx) => (idx === 0 ? 0 : Math.max(0, (r as any).import_consumption ?? 0)));
         } else {
-          const firstImport = dataSource[0]?.ept_c ?? 0;
+          const firstImport = Number(dataSource[0]?.ept_c ?? 0);
 
           data = dataSource.map((r, idx) => {
             if (idx === 0) return 0;
 
-            const currentImport = r.ept_c ?? firstImport;
+            const currentImport = Number(r.ept_c ?? firstImport);
             let importDelta = currentImport - firstImport;
 
             const importReset =
@@ -793,12 +793,12 @@ const RoomChartsPage: React.FC = () => {
         } else if (selectedDeviceIds.length > 1) {
           data = dataSource.map((r, idx) => (idx === 0 ? 0 : Math.max(0, (r as any).generation_total ?? 0)));
         } else {
-          const firstGeneration = dataSource[0]?.ept_g ?? 0;
+          const firstGeneration = Number(dataSource[0]?.ept_g ?? 0);
 
           data = dataSource.map((r, idx) => {
             if (idx === 0) return 0;
 
-            const currentGeneration = r.ept_g ?? firstGeneration;
+            const currentGeneration = Number(r.ept_g ?? firstGeneration);
             let generationDelta = currentGeneration - firstGeneration;
 
             const generationReset =
@@ -870,17 +870,17 @@ const RoomChartsPage: React.FC = () => {
         return 0;
       }
 
-      const firstImport = readings[0]?.ept_c ?? 0;
-      const firstGeneration = readings[0]?.ept_g ?? 0;
+      const firstImport = Number(readings[0]?.ept_c ?? 0);
+      const firstGeneration = Number(readings[0]?.ept_g ?? 0);
       const lastReading = readings[readings.length - 1];
-      const currentImport = lastReading?.ept_c ?? firstImport;
-      const currentGeneration = lastReading?.ept_g ?? firstGeneration;
+      const currentImport = Number(lastReading?.ept_c ?? firstImport);
+      const currentGeneration = Number(lastReading?.ept_g ?? firstGeneration);
 
       let importDelta = currentImport - firstImport;
       let generationDelta = currentGeneration - firstGeneration;
 
       const hasGenerationEvidence =
-        generationDelta > 0 || (lastReading?.pt ?? 0) < 0;
+        generationDelta > 0 || (Number(lastReading?.pt ?? 0)) < 0;
 
       const importReset =
         firstImport > 0 &&
@@ -916,9 +916,9 @@ const RoomChartsPage: React.FC = () => {
         return 0;
       }
 
-      const firstImport = readings[0]?.ept_c ?? 0;
+      const firstImport = Number(readings[0]?.ept_c ?? 0);
       const lastReading = readings[readings.length - 1];
-      const currentImport = lastReading?.ept_c ?? firstImport;
+      const currentImport = Number(lastReading?.ept_c ?? firstImport);
 
       let importDelta = currentImport - firstImport;
       const importReset =
@@ -943,9 +943,9 @@ const RoomChartsPage: React.FC = () => {
         return 0;
       }
 
-      const firstGeneration = readings[0]?.ept_g ?? 0;
+      const firstGeneration = Number(readings[0]?.ept_g ?? 0);
       const lastReading = readings[readings.length - 1];
-      const currentGeneration = lastReading?.ept_g ?? firstGeneration;
+      const currentGeneration = Number(lastReading?.ept_g ?? firstGeneration);
 
       let generationDelta = currentGeneration - firstGeneration;
       const generationReset =

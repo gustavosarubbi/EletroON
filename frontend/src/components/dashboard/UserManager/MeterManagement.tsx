@@ -597,7 +597,7 @@ const MeterManagement: React.FC<MeterManagementProps> = ({
                         .filter(m => m.status === 'ONLINE')
                         .map(meter => {
                           const isAssociated = !!meter.associatedUserId;
-                          const [selectedUserForMeter, setSelectedUserForMeter] = useState<number | null>(null);
+                          const selectedUserId = selectedUserForMeter[meter.id] || null;
 
                           return (
                             <div
@@ -663,7 +663,7 @@ const MeterManagement: React.FC<MeterManagementProps> = ({
                                           </div>
                                           <button
                                             className="meter-meter-card-associate-btn"
-                                            onClick={() => setSelectedUserForMeter(prev => ({ ...prev, [meter.id]: 0 }))}
+                                            onClick={() => setSelectedUserForMeter(prev => ({ ...prev, [meter.id]: null }))}
                                             title="Associar medidor a um usuário"
                                           >
                                             <Link2 size={14} />
@@ -812,7 +812,7 @@ const MeterManagement: React.FC<MeterManagementProps> = ({
                                           </div>
                                           <button
                                             className="meter-meter-card-associate-btn"
-                                            onClick={() => setSelectedUserForMeter(prev => ({ ...prev, [meter.id]: 0 }))}
+                                            onClick={() => setSelectedUserForMeter(prev => ({ ...prev, [meter.id]: null }))}
                                             title="Associar medidor a um usuário"
                                           >
                                             <Link2 size={14} />

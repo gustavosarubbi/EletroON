@@ -111,4 +111,10 @@ export class AdminController {
   ) {
     return this.adminService.removeRoomFromUser(parseInt(id), body.roomName);
   }
+
+  @Get('rooms')
+  @UseGuards(JwtAuthGuard)
+  async getAllRooms(@Request() req: { user: AuthenticatedUser }) {
+    return this.adminService.listAllRooms();
+  }
 }

@@ -1,0 +1,219 @@
+.energy-meter-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  padding: 2rem;
+  width: 100%;
+  animation: fadeInScale 0.8s ease-out;
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.energy-meter-svg {
+  filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.5));
+  animation: meterGlow 3s ease-in-out infinite;
+}
+
+@keyframes meterGlow {
+  0%, 100% {
+    filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.5)) 
+            drop-shadow(0 0 30px rgba(0, 255, 255, 0.4))
+            drop-shadow(0 0 50px rgba(138, 43, 226, 0.3));
+  }
+  50% {
+    filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.5)) 
+            drop-shadow(0 0 40px rgba(0, 255, 255, 0.6))
+            drop-shadow(0 0 70px rgba(138, 43, 226, 0.5));
+  }
+}
+
+.needle-group {
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center;
+  animation: needlePulse 2s ease-in-out infinite;
+}
+
+@keyframes needlePulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+.needle-center {
+  animation: centerPulse 2.5s ease-in-out infinite;
+}
+
+@keyframes centerPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.9;
+  }
+}
+
+.needle-line {
+  animation: lineGlow 2s ease-in-out infinite;
+}
+
+@keyframes lineGlow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.meter-progress-arc {
+  animation: progressGlow 3s ease-in-out infinite;
+}
+
+@keyframes progressGlow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+.meter-center {
+  animation: centerGlow 3s ease-in-out infinite;
+}
+
+@keyframes centerGlow {
+  0%, 100% {
+    filter: drop-shadow(0 0 8px currentColor);
+    opacity: 1;
+  }
+  50% {
+    filter: drop-shadow(0 0 15px currentColor);
+    opacity: 0.9;
+  }
+}
+
+.energy-meter-display {
+  margin-top: 2rem;
+  text-align: center;
+  padding: 2rem 3rem;
+  background: linear-gradient(135deg, rgba(0, 255, 255, 0.1) 0%, rgba(138, 43, 226, 0.1) 100%);
+  border-radius: 20px;
+  border: 1px solid rgba(0, 255, 255, 0.4);
+  backdrop-filter: blur(15px);
+  min-width: 300px;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    0 0 30px rgba(0, 255, 255, 0.2),
+    inset 0 0 20px rgba(0, 255, 255, 0.1);
+  animation: displayBorderGlow 3s ease-in-out infinite;
+}
+
+@keyframes displayBorderGlow {
+  0%, 100% {
+    border-color: rgba(0, 255, 255, 0.4);
+    box-shadow: 
+      0 8px 32px rgba(0, 0, 0, 0.4),
+      0 0 30px rgba(0, 255, 255, 0.2),
+      inset 0 0 20px rgba(0, 255, 255, 0.1);
+  }
+  50% {
+    border-color: rgba(0, 255, 255, 0.7);
+    box-shadow: 
+      0 8px 32px rgba(0, 0, 0, 0.4),
+      0 0 50px rgba(0, 255, 255, 0.4),
+      inset 0 0 30px rgba(0, 255, 255, 0.2);
+  }
+}
+
+.energy-meter-value-display {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.energy-value-number {
+  font-size: 4rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #00ffff 0%, #8a2be2 50%, #00bfff 100%);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+  animation: gradientText 3s ease infinite;
+  filter: drop-shadow(0 0 20px rgba(0, 255, 255, 0.6));
+  text-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+}
+
+@keyframes gradientText {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.energy-value-unit {
+  font-size: 2rem;
+  font-weight: 500;
+  color: rgba(0, 255, 255, 0.9);
+  text-shadow: 0 0 15px rgba(0, 255, 255, 0.6);
+  filter: drop-shadow(0 0 10px rgba(0, 255, 255, 0.5));
+}
+
+.energy-meter-label-display {
+  font-size: 1.2rem;
+  color: rgba(0, 255, 255, 0.8);
+  text-transform: capitalize;
+  letter-spacing: 0.1em;
+  margin-top: 0.5rem;
+  text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .energy-meter-wrapper {
+    padding: 1rem;
+  }
+
+  .energy-value-number {
+    font-size: 3rem;
+  }
+
+  .energy-value-unit {
+    font-size: 1.5rem;
+  }
+
+  .energy-meter-display {
+    padding: 1.5rem 2rem;
+    min-width: 250px;
+  }
+
+  .energy-meter-label-display {
+    font-size: 1rem;
+  }
+}
+

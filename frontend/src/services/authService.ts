@@ -3,7 +3,9 @@ import { LoginCredentials, AuthResponse } from '../types/auth';
 
 // ⚠️ IMPORTANTE: Este projeto usa pnpm para gerenciamento de pacotes
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+// Usar proxy do Vite em desenvolvimento, ou URL direta em produção
+const API_BASE_URL = import.meta.env.VITE_API_URL || 
+  (import.meta.env.DEV ? '/api' : 'http://localhost:3000/api');
 
 // Configuração do Axios
 const api = axios.create({
@@ -95,14 +97,23 @@ export const authService = {
         this.clearAuthData();
       }
       
-      // Fazer requisição de login sem token no header
-      const response = await axios.post<{ access_token: string }>(
-        `${API_BASE_URL}/auth/login`,
+      // Usar a instância api que já tem baseURL configurado
+      // Isso garante que o proxy do Vite funcione corretamente
+      console.log('🔗 URL de login: /auth/login');
+      console.log('📤 Base URL configurada:', API_BASE_URL);
+      console.log('📤 URL completa será:', `${API_BASE_URL}/auth/login`);
+      console.log('🌐 Modo:', import.meta.env.DEV ? 'DESENVOLVIMENTO (proxy)' : 'PRODUÇÃO');
+      
+      // Fazer requisição de login usando a instância api (sem token no header)
+      // A instância api já tem o baseURL configurado e os interceptors
+      const response = await api.post<{ access_token: string }>(
+        '/auth/login',
         credentials,
         {
           headers: {
             'Content-Type': 'application/json',
           },
+          timeout: 10000, // 10 segundos de timeout
         }
       );
       
@@ -160,11 +171,33 @@ export const authService = {
         
         // Erro 404 - Servidor não encontrado
         if (apiError.response?.status === 404) {
-          throw new Error('Servidor não encontrado. Verifique se o backend está rodando.');
+          const axiosError = error as any;
+          console.error('❌ Endpoint não encontrado (404)');
+          console.error('🔍 URL completa tentada:', axiosError.config?.url || 'N/A');
+          console.error('🔍 Base URL configurada:', axiosError.config?.baseURL || 'N/A');
+          console.error('🔍 URL final:', axiosError.config?.baseURL + axiosError.config?.url || 'N/A');
+          console.error('🔍 Modo desenvolvimento:', import.meta.env.DEV);
+          console.error('💡 Verifique se:');
+          console.error('   1. O backend está rodando: cd backend && pnpm start:dev');
+          console.error('   2. O frontend está rodando: cd frontend && pnpm dev');
+          console.error('   3. O proxy do Vite está configurado corretamente');
+          console.error('   4. Teste diretamente: http://localhost:3000/api/auth/login');
+          throw new Error('Servidor não encontrado. Verifique se o backend está rodando em http://localhost:3000');
         }
         
         // Erro de rede
         if (apiError.response?.status === undefined) {
+          const axiosError = error as any;
+          console.error('❌ Erro de rede - sem resposta do servidor');
+          console.error('🔍 URL tentada:', axiosError.config?.url || 'N/A');
+          console.error('🔍 Base URL:', axiosError.config?.baseURL || 'N/A');
+          console.error('🔍 Erro completo:', axiosError.message || 'N/A');
+          console.error('🔍 Código do erro:', axiosError.code || 'N/A');
+          console.error('💡 Verifique se:');
+          console.error('   1. O backend está rodando na porta 3000');
+          console.error('   2. O frontend está rodando e o proxy está ativo');
+          console.error('   3. Não há firewall bloqueando a conexão');
+          console.error('   4. Teste diretamente no navegador: http://localhost:3000/api');
           throw new Error('Erro de conexão. Verifique se o backend está acessível.');
         }
         

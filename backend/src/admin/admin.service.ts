@@ -72,6 +72,16 @@ export class AdminService {
     return rooms;
   }
 
+  // Método público para listar todas as salas
+  async listAllRooms(): Promise<Array<{ id: number; name: string }>> {
+    try {
+      return await this.getAllRooms();
+    } catch (error) {
+      this.logger.error('Erro ao buscar todas as salas:', error);
+      throw error;
+    }
+  }
+
   // Função auxiliar para buscar ou criar uma sala (workaround temporário)
   private async findOrCreateRoom(roomName: string): Promise<{ id: number; name: string }> {
     // Buscar todas as salas e comparar case-insensitive

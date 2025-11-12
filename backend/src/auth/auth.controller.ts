@@ -39,4 +39,13 @@ export class AuthController {
       throw new InternalServerErrorException('Erro interno no servidor.');
     }
   }
+
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  async logout() {
+    logInfo(this.logger, 'Requisição de logout recebida');
+    // O logout é principalmente uma operação do lado do cliente
+    // Aqui apenas confirmamos que a requisição foi recebida
+    return { message: 'Logout realizado com sucesso' };
+  }
 }

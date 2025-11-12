@@ -51,6 +51,7 @@ const RoomChartsPage: React.FC = () => {
   
   // Estados principais
   const [devices, setDevices] = useState<Device[]>([]);
+  const [allRooms, setAllRooms] = useState<string[]>([]); // Todas as salas do sistema
   const [selectedRoom, setSelectedRoom] = useState<string>(''); // Nome da sala selecionada
   const [selectedDeviceIds, setSelectedDeviceIds] = useState<number[]>([]);
   const [readings, setReadings] = useState<Reading[]>([]);
@@ -172,9 +173,13 @@ const RoomChartsPage: React.FC = () => {
     return map;
   }, [devices]);
 
+  // Lista de salas: usar todas as salas do sistema, não apenas as que têm dispositivos
   const roomsList = useMemo(() => {
-    return Array.from(roomsMap.keys()).sort();
-  }, [roomsMap]);
+    // Combinar salas do sistema com salas que têm dispositivos
+    const roomsWithDevices = Array.from(roomsMap.keys());
+    const allRoomsSet = new Set([...allRooms, ...roomsWithDevices]);
+    return Array.from(allRoomsSet).sort();
+  }, [roomsMap, allRooms]);
 
   // Filtrar salas baseado no termo de busca
   const filteredRoomsList = useMemo(() => {
@@ -226,10 +231,24 @@ const RoomChartsPage: React.FC = () => {
     return filtered;
   }, [devicesByRoom, meterSearchTerm, meterStatusFilter]);
 
-  // Carregar dispositivos
+  // Carregar salas e dispositivos
   useEffect(() => {
+    loadRooms();
     loadDevices();
   }, []);
+
+  const loadRooms = async () => {
+    try {
+      const roomsData = await dashboardService.getRooms();
+      const roomNames = roomsData.map(room => room.name);
+      setAllRooms(roomNames);
+    } catch (err: any) {
+      console.error('Erro ao carregar salas:', err);
+      // Não definir erro aqui para não bloquear a página se houver problema ao buscar salas
+    }
+  };
+
+  // Não selecionar sala por padrão - deixar o usuário escolher
 
   // Atualizar medidores selecionados quando mudar a sala ou mostrar todas
   useEffect(() => {
@@ -249,10 +268,9 @@ const RoomChartsPage: React.FC = () => {
       } else {
         setSelectedDeviceIds([]);
       }
-    } else {
-      // Se não há sala selecionada, não selecionar nenhum medidor automaticamente
-      setSelectedDeviceIds([]);
     }
+    // Se não há sala selecionada, não alterar a seleção de medidores
+    // Deixar o usuário escolher manualmente
   }, [selectedRoom, roomsMap, showAllRooms]);
 
   // Carregar leituras quando dispositivos ou período mudarem
@@ -271,31 +289,6 @@ const RoomChartsPage: React.FC = () => {
       setError(null);
       const devicesData = await dashboardService.getDevices();
       setDevices(devicesData);
-      
-      // Selecionar primeira sala disponível por padrão
-      // Apenas medidores associados a usuários com sala definida
-      const roomsWithDevices = new Map<string, Device[]>();
-      devicesData.forEach(device => {
-        if (device.user?.rooms && device.user.rooms.length > 0) {
-          const room = device.user.rooms[0];
-          if (!roomsWithDevices.has(room)) {
-            roomsWithDevices.set(room, []);
-          }
-          roomsWithDevices.get(room)!.push(device);
-        }
-      });
-      
-      const rooms = Array.from(roomsWithDevices.keys()).sort();
-      
-      // Selecionar primeira sala apenas se não houver uma sala já selecionada
-      if (rooms.length > 0) {
-        if (!selectedRoom || !rooms.includes(selectedRoom)) {
-          setSelectedRoom(rooms[0]);
-        }
-      } else {
-        // Se não há salas, limpar seleção
-        setSelectedRoom('');
-      }
     } catch (err: any) {
       console.error('Erro ao carregar dispositivos:', err);
       
@@ -620,8 +613,11 @@ const RoomChartsPage: React.FC = () => {
 
   const handleToggleShowAllRooms = () => {
     setShowAllRooms(!showAllRooms);
-    setSelectedRoom(''); // Limpar seleção de sala quando mostrar todas
-    setMeterSearchTerm(''); // Limpar busca de medidores
+    if (!showAllRooms) {
+      // Ao ativar "todas as salas", limpar seleção de sala
+      setSelectedRoom('');
+    }
+    // Não limpar busca de medidores para manter a experiência do usuário
   };
 
   const handleExportReport = async (format: 'csv' | 'json' = 'csv') => {
@@ -1148,7 +1144,7 @@ const RoomChartsPage: React.FC = () => {
                       placeholder={roomsList.length > 0 ? (roomsList.length > 5 ? "Buscar sala..." : "Filtrar salas...") : "Buscar sala..."}
                       value={roomSearchTerm}
                       onChange={(e) => setRoomSearchTerm(e.target.value)}
-                      disabled={loading || showAllRooms}
+                      disabled={loading}
                     />
                     {roomSearchTerm && (
                       <button
@@ -1363,7 +1359,7 @@ const RoomChartsPage: React.FC = () => {
                           ? 'Não há medidores disponíveis.'
                           : selectedRoom 
                           ? `Não há medidores associados à sala "${selectedRoom}".`
-                          : 'Selecione uma sala para ver os medidores.'}
+                          : 'Nenhum medidor disponível no momento.'}
                       </p>
                       {meterSearchTerm && (
                         <button

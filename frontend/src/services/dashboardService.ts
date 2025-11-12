@@ -9,7 +9,9 @@ import {
   WeeklySummary,
 } from '../types/dashboard';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+// Usar proxy do Vite em desenvolvimento, ou URL direta em produção
+const API_BASE_URL = import.meta.env.VITE_API_URL || 
+  (import.meta.env.DEV ? '/api' : 'http://localhost:3000/api');
 
 // Configuração do Axios
 const api = axios.create({
@@ -17,7 +19,13 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 10000, // 10 segundos de timeout
 });
+
+// Log da URL da API no console (apenas em desenvolvimento)
+if (import.meta.env.DEV) {
+  console.log('🔗 API Base URL:', API_BASE_URL);
+}
 
 // Função auxiliar para verificar se o token é válido
 function isTokenValid(token: string): boolean {
@@ -43,22 +51,41 @@ api.interceptors.request.use(
       localStorage.removeItem('token');
       localStorage.removeItem('user');
     }
+    
+    // Log da requisição em desenvolvimento
+    if (import.meta.env.DEV) {
+      console.log('📤 Requisição:', config.method?.toUpperCase(), config.url);
+    }
+    
     return config;
   },
   (error) => {
+    if (import.meta.env.DEV) {
+      console.error('❌ Erro na configuração da requisição:', error);
+    }
     return Promise.reject(error);
   }
 );
 
 // Interceptor para tratar erros de resposta
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Log da resposta em desenvolvimento
+    if (import.meta.env.DEV) {
+      console.log('📥 Resposta:', response.status, response.config.url);
+    }
+    return response;
+  },
   (error) => {
     // Tratar diferentes tipos de erro
     if (error.response) {
       // Erro de resposta do servidor
       const status = error.response.status;
       const message = error.response.data?.message || error.response.data?.error || 'Erro desconhecido';
+      
+      if (import.meta.env.DEV) {
+        console.error('❌ Erro de resposta:', status, message, error.config?.url);
+      }
       
       if (status === 401) {
         // Token inválido ou expirado
@@ -79,6 +106,17 @@ api.interceptors.response.use(
     } else if (error.request) {
       // Requisição feita mas sem resposta (erro de rede)
       console.error('🌐 Erro de conexão com a API:', error.message);
+      console.error('🔍 Detalhes:', {
+        url: error.config?.url,
+        baseURL: error.config?.baseURL,
+        method: error.config?.method,
+      });
+      
+      // Verificar se o backend está acessível
+      if (import.meta.env.DEV) {
+        console.warn('💡 Dica: Verifique se o backend está rodando em http://localhost:3000');
+        console.warn('💡 Execute: cd backend && pnpm start:dev');
+      }
     } else {
       // Erro ao configurar a requisição
       console.error('⚠️ Erro ao configurar requisição:', error.message);
@@ -405,6 +443,17 @@ export const dashboardService = {
       return response.data;
     } catch (error) {
       console.error('Erro ao remover sala:', error);
+      throw error;
+    }
+  },
+
+  // Listar todas as salas
+  async getRooms(): Promise<Array<{ id: number; name: string }>> {
+    try {
+      const response = await api.get('/admin/rooms');
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao buscar salas:', error);
       throw error;
     }
   },

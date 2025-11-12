@@ -19,12 +19,12 @@ $envContent = Get-Content .env -Raw
 if ($envContent -match 'DATABASE_URL=postgresql://([^:]+):([^@]+)@([^:]+):([^/]+)/([^?]+)') {
     $username = $matches[1]
     $password = $matches[2]
-    $host = $matches[3]
+    $dbHost = $matches[3]
     $port = $matches[4]
     $database = $matches[5]
     
     Write-Host "Configurações encontradas:" -ForegroundColor Yellow
-    Write-Host "  Host: $host" -ForegroundColor Gray
+    Write-Host "  Host: $dbHost" -ForegroundColor Gray
     Write-Host "  Porta: $port" -ForegroundColor Gray
     Write-Host "  Usuário: $username" -ForegroundColor Gray
     Write-Host "  Banco: $database" -ForegroundColor Gray
@@ -64,21 +64,21 @@ if ($envContent -match 'DATABASE_URL=postgresql://([^:]+):([^@]+)@([^:]+):([^/]+
     Write-Host "1. Criando banco de dados '$database' (se não existir)..." -ForegroundColor Yellow
     
     # Verificar se o banco existe
-    $dbExists = psql -U $username -h $host -p $port -t -A -c "SELECT 1 FROM pg_database WHERE datname='$database'" 2>&1
+    $dbExists = psql -U $username -h $dbHost -p $port -t -A -c "SELECT 1 FROM pg_database WHERE datname='$database'" 2>&1
     
     if ($LASTEXITCODE -ne 0) {
         Write-Host "❌ Erro ao conectar ao PostgreSQL!" -ForegroundColor Red
         Write-Host "   Verifique se:" -ForegroundColor Yellow
         Write-Host "   - PostgreSQL está instalado e rodando" -ForegroundColor Yellow
         Write-Host "   - As credenciais no .env estão corretas" -ForegroundColor Yellow
-        Write-Host "   - O servidor PostgreSQL está acessível em $host`:$port" -ForegroundColor Yellow
+        Write-Host "   - O servidor PostgreSQL está acessível em $dbHost`:$port" -ForegroundColor Yellow
         exit 1
     }
     
     if ($dbExists -match "1") {
         Write-Host "   ✓ Banco de dados '$database' já existe." -ForegroundColor Green
     } else {
-        $createResult = psql -U $username -h $host -p $port -c "CREATE DATABASE $database;" 2>&1
+        $createResult = psql -U $username -h $dbHost -p $port -c "CREATE DATABASE $database;" 2>&1
         if ($LASTEXITCODE -eq 0) {
             Write-Host "   ✓ Banco de dados '$database' criado com sucesso!" -ForegroundColor Green
         } else {

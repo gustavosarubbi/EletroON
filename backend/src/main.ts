@@ -7,6 +7,11 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import * as express from 'express';
 import * as net from 'net';
 
+// Detectar se estamos em modo watch
+const isWatchMode = process.argv.includes('--watch') || 
+                    process.env.NODE_ENV === 'development' ||
+                    process.env.NEST_WATCH === 'true';
+
 /**
  * Verifica se uma porta está disponível
  */
@@ -15,27 +20,33 @@ function isPortAvailable(port: number): Promise<boolean> {
     const server = net.createServer();
     let resolved = false;
     
-    // Timeout para evitar que trave indefinidamente
-    const timeout = setTimeout(() => {
+    const cleanup = () => {
       if (!resolved) {
         resolved = true;
-        server.close();
-        resolve(false);
+        server.removeAllListeners();
+        server.close(() => {
+          // Servidor fechado completamente
+        });
       }
-    }, 1000);
+    };
     
-    server.listen(port, () => {
+    // Timeout aumentado para 2 segundos e com cleanup adequado
+    const timeout = setTimeout(() => {
+      cleanup();
+      resolve(false);
+    }, 2000);
+    
+    server.once('listening', () => {
       if (!resolved) {
         resolved = true;
         clearTimeout(timeout);
-        server.once('close', () => {
+        server.close(() => {
           resolve(true);
         });
-        server.close();
       }
     });
     
-    server.on('error', (err: any) => {
+    server.once('error', (err: any) => {
       if (!resolved) {
         resolved = true;
         clearTimeout(timeout);
@@ -48,6 +59,9 @@ function isPortAvailable(port: number): Promise<boolean> {
         }
       }
     });
+    
+    // Tentar fazer bind na porta
+    server.listen(port);
   });
 }
 
@@ -75,6 +89,47 @@ async function findAvailablePort(startPort: number, maxAttempts: number = 10): P
   
   throw new Error(`Não foi possível encontrar uma porta disponível após ${maxAttempts} tentativas (tentou portas ${startPort} até ${startPort + maxAttempts - 1})`);
 }
+
+// Tratamento de erros não capturados - DEVE estar antes do bootstrap
+process.on('uncaughtException', (error: Error) => {
+  const logger = new Logger('UncaughtException');
+  logger.error('❌ Erro não capturado:', error);
+  logger.error('Stack:', error.stack);
+  
+  // Em modo watch, não encerrar imediatamente - deixar o NestJS reiniciar
+  if (isWatchMode) {
+    logger.warn('⚠️ Modo watch detectado - erro será tratado pelo watch mode');
+    // Não chamar process.exit() - deixar o processo encerrar naturalmente
+    // O NestJS watch mode vai reiniciar automaticamente
+    return;
+  }
+  
+  // Em produção, encerrar após 5 segundos para evitar estado inconsistente
+  setTimeout(() => {
+    logger.error('⚠️ Encerrando processo devido a erro não tratado...');
+    process.exit(1);
+  }, 5000);
+});
+
+process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
+  const logger = new Logger('UnhandledRejection');
+  logger.error('❌ Promise rejeitada não tratada:', reason);
+  logger.error('Promise:', promise);
+  // Logar mas não encerrar imediatamente (pode ser recuperável)
+});
+
+// Tratamento de sinais de encerramento
+process.on('SIGTERM', () => {
+  const logger = new Logger('SIGTERM');
+  logger.log('⚠️ Recebido SIGTERM, encerrando graciosamente...');
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  const logger = new Logger('SIGINT');
+  logger.log('⚠️ Recebido SIGINT, encerrando graciosamente...');
+  process.exit(0);
+});
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -230,15 +285,30 @@ async function bootstrap() {
     
     logger.log(`🌐 Iniciando servidor na porta ${port}...`);
     
-    // Tentar iniciar o servidor, com fallback se a porta estiver ocupada
+    // Tentar iniciar o servidor, com fallback se a porta estiver ocupada e timeout
     try {
-      await app.listen(port);
+      const listenPromise = app.listen(port);
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          reject(new Error(`Timeout: Servidor não iniciou em 10 segundos na porta ${port}`));
+        }, 10000);
+      });
+      
+      await Promise.race([listenPromise, timeoutPromise]);
     } catch (listenError: any) {
       // Se a porta estiver ocupada mesmo após verificação, tentar próxima porta
       if (listenError?.code === 'EADDRINUSE') {
         logger.warn(`⚠️  Porta ${port} foi ocupada durante a inicialização, tentando próxima porta...`);
         port = await findAvailablePort(port + 1, 5);
-        await app.listen(port);
+        
+        const listenPromise = app.listen(port);
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => {
+            reject(new Error(`Timeout: Servidor não iniciou em 10 segundos na porta ${port}`));
+          }, 10000);
+        });
+        
+        await Promise.race([listenPromise, timeoutPromise]);
         logger.warn(`✅ Servidor iniciado na porta ${port} (porta original ${requestedPort} estava ocupada)`);
       } else {
         throw listenError;
@@ -254,10 +324,31 @@ async function bootstrap() {
     logger.log('');
   } catch (error) {
     logger.error('❌ Erro ao iniciar a aplicação:', error);
+    
+    // Em modo watch, não encerrar - deixar o NestJS reiniciar
+    if (isWatchMode) {
+      logger.warn('⚠️ Modo watch detectado - aguardando reinicialização...');
+      // Não chamar process.exit() - lançar o erro para o NestJS capturar
+      throw error;
+    }
+    
+    // Em produção, encerrar
     process.exit(1);
   }
 }
+
 bootstrap().catch((error) => {
-  console.error('❌ Erro fatal ao inicializar aplicação:', error);
+  const logger = new Logger('Bootstrap');
+  logger.error('❌ Erro fatal ao inicializar aplicação:', error);
+  logger.error('Stack:', error.stack);
+  
+  // Em modo watch, não encerrar - apenas logar
+  if (isWatchMode) {
+    logger.warn('⚠️ Modo watch detectado - aguardando reinicialização...');
+    // Não fazer nada - o NestJS vai reiniciar automaticamente
+    return;
+  }
+  
+  // Em produção, encerrar
   process.exit(1);
 });

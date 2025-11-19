@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { isAxiosError } from 'axios';
 import { LoginCredentials, AuthResponse } from '../types/auth';
 
 // ⚠️ IMPORTANTE: Este projeto usa pnpm para gerenciamento de pacotes
@@ -152,65 +152,98 @@ export const authService = {
     } catch (error: unknown) {
       console.error('❌ Erro no serviço de autenticação:', error);
       
-      // Tratamento específico de erros HTTP
-      if (error && typeof error === 'object' && 'response' in error) {
-        const apiError = error as { 
-          response?: { 
-            status?: number;
-            data?: { message?: string; error?: string } 
-          } 
-        };
+      // Tratamento detalhado de erros Axios
+      if (isAxiosError(error)) {
+        const axiosError = error;
+        
+        // Log detalhado do erro
+        console.error('📋 Detalhes do erro Axios:');
+        console.error('   - Código:', axiosError.code || 'N/A');
+        console.error('   - Mensagem:', axiosError.message || 'N/A');
+        console.error('   - URL tentada:', axiosError.config?.url || 'N/A');
+        console.error('   - Base URL:', axiosError.config?.baseURL || 'N/A');
+        console.error('   - URL completa:', `${axiosError.config?.baseURL || ''}${axiosError.config?.url || ''}` || 'N/A');
+        console.error('   - Método:', axiosError.config?.method?.toUpperCase() || 'N/A');
+        console.error('   - Status HTTP:', axiosError.response?.status || 'N/A (sem resposta)');
+        console.error('   - Dados da resposta:', axiosError.response?.data || 'N/A');
+        console.error('   - Modo desenvolvimento:', import.meta.env.DEV);
+        
+        // Erro de conexão (ECONNREFUSED, ETIMEDOUT, etc.)
+        if (!axiosError.response) {
+          const errorCode = axiosError.code;
+          let errorMessage = 'Erro de conexão com o servidor.';
+          
+          if (errorCode === 'ECONNREFUSED') {
+            errorMessage = 'Não foi possível conectar ao servidor. Verifique se o backend está rodando na porta 3000.';
+            console.error('💡 Solução:');
+            console.error('   1. Verifique se o backend está rodando: cd backend && pnpm start:dev');
+            console.error('   2. Verifique se o backend está na porta 3000');
+            console.error('   3. Teste diretamente: http://localhost:3000/api');
+          } else if (errorCode === 'ETIMEDOUT' || errorCode === 'ECONNABORTED') {
+            errorMessage = 'Tempo de conexão esgotado. O servidor pode estar sobrecarregado ou inacessível.';
+            console.error('💡 Solução:');
+            console.error('   1. Verifique se o backend está respondendo');
+            console.error('   2. Verifique a conexão de rede');
+            console.error('   3. Tente novamente em alguns instantes');
+          } else if (errorCode === 'ERR_NETWORK') {
+            errorMessage = 'Erro de rede. Verifique sua conexão com a internet.';
+            console.error('💡 Solução:');
+            console.error('   1. Verifique sua conexão de internet');
+            console.error('   2. Verifique se o proxy do Vite está funcionando');
+            console.error('   3. Verifique se há firewall bloqueando a conexão');
+          } else {
+            console.error('💡 Solução:');
+            console.error('   1. O backend está rodando? cd backend && pnpm start:dev');
+            console.error('   2. O frontend está rodando? cd frontend && pnpm dev');
+            console.error('   3. O proxy do Vite está configurado? Verifique vite.config.ts');
+            console.error('   4. Teste diretamente: http://localhost:3000/api/auth/login');
+          }
+          
+          throw new Error(errorMessage);
+        }
         
         // Erro 401 - Credenciais inválidas
-        if (apiError.response?.status === 401) {
-          const errorMessage = apiError.response.data?.message || 
-                             apiError.response.data?.error || 
+        if (axiosError.response?.status === 401) {
+          const errorMessage = axiosError.response.data?.message || 
+                             axiosError.response.data?.error || 
                              'Credenciais inválidas. Verifique seu email e senha.';
           throw new Error(errorMessage);
         }
         
         // Erro 404 - Servidor não encontrado
-        if (apiError.response?.status === 404) {
-          const axiosError = error as any;
-          console.error('❌ Endpoint não encontrado (404)');
-          console.error('🔍 URL completa tentada:', axiosError.config?.url || 'N/A');
-          console.error('🔍 Base URL configurada:', axiosError.config?.baseURL || 'N/A');
-          console.error('🔍 URL final:', axiosError.config?.baseURL + axiosError.config?.url || 'N/A');
-          console.error('🔍 Modo desenvolvimento:', import.meta.env.DEV);
-          console.error('💡 Verifique se:');
-          console.error('   1. O backend está rodando: cd backend && pnpm start:dev');
-          console.error('   2. O frontend está rodando: cd frontend && pnpm dev');
-          console.error('   3. O proxy do Vite está configurado corretamente');
-          console.error('   4. Teste diretamente: http://localhost:3000/api/auth/login');
-          throw new Error('Servidor não encontrado. Verifique se o backend está rodando em http://localhost:3000');
+        if (axiosError.response?.status === 404) {
+          console.error('💡 Solução:');
+          console.error('   1. Verifique se a rota /api/auth/login existe no backend');
+          console.error('   2. Verifique se o prefixo global está configurado como "api"');
+          console.error('   3. Teste diretamente: http://localhost:3000/api/auth/login');
+          throw new Error('Endpoint não encontrado. Verifique se o backend está rodando e a rota está correta.');
         }
         
-        // Erro de rede
-        if (apiError.response?.status === undefined) {
-          const axiosError = error as any;
-          console.error('❌ Erro de rede - sem resposta do servidor');
-          console.error('🔍 URL tentada:', axiosError.config?.url || 'N/A');
-          console.error('🔍 Base URL:', axiosError.config?.baseURL || 'N/A');
-          console.error('🔍 Erro completo:', axiosError.message || 'N/A');
-          console.error('🔍 Código do erro:', axiosError.code || 'N/A');
-          console.error('💡 Verifique se:');
-          console.error('   1. O backend está rodando na porta 3000');
-          console.error('   2. O frontend está rodando e o proxy está ativo');
-          console.error('   3. Não há firewall bloqueando a conexão');
-          console.error('   4. Teste diretamente no navegador: http://localhost:3000/api');
-          throw new Error('Erro de conexão. Verifique se o backend está acessível.');
+        // Erro 500 - Erro interno do servidor
+        if (axiosError.response?.status === 500) {
+          const errorMessage = axiosError.response.data?.message || 
+                             axiosError.response.data?.error || 
+                             'Erro interno do servidor. Tente novamente mais tarde.';
+          console.error('💡 O backend retornou um erro 500. Verifique os logs do servidor.');
+          throw new Error(errorMessage);
         }
         
         // Outros erros HTTP
-        if (apiError.response?.data?.message) {
-          throw new Error(apiError.response.data.message);
+        if (axiosError.response?.data?.message) {
+          throw new Error(axiosError.response.data.message);
         }
         
-        if (apiError.response?.data?.error) {
-          throw new Error(apiError.response.data.error);
+        if (axiosError.response?.data?.error) {
+          throw new Error(axiosError.response.data.error);
+        }
+        
+        // Erro HTTP genérico
+        if (axiosError.response?.status) {
+          throw new Error(`Erro HTTP ${axiosError.response.status}: ${axiosError.message}`);
         }
       }
       
+      // Erro genérico
       if (error instanceof Error) {
         throw error;
       } else {

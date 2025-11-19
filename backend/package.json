@@ -22,7 +22,8 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
-    "prisma:seed": "prisma db seed"
+    "prisma:seed": "prisma db seed",
+    "clean:ports": "powershell -ExecutionPolicy Bypass -File ./clean-ports.ps1"
   },
   "dependencies": {
     "@nestjs/cache-manager": "^3.0.1",

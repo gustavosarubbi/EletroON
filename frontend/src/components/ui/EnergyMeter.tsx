@@ -42,7 +42,7 @@ const EnergyMeter: React.FC<EnergyMeterProps> = ({
   };
 
   // Calcular posição dos números no arco
-  const getNumberPosition = (num: number, index: number) => {
+  const getNumberPosition = (num: number) => {
     const numAngle = ((num / maxValue) * 180) * (Math.PI / 180);
     const numRadius = radius + 30;
     return {
@@ -73,7 +73,7 @@ const EnergyMeter: React.FC<EnergyMeterProps> = ({
     );
 
     if (isMajor) {
-      const pos = getNumberPosition(markValue, i);
+      const pos = getNumberPosition(markValue);
       numbers.push(
         <text
           key={`num-${i}`}

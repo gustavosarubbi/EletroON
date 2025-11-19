@@ -5,11 +5,17 @@ const prisma = new PrismaClient();
 async function listMeters() {
   try {
     console.log('\n═══════════════════════════════════════════════════════');
-    console.log('📋 LISTA DE MEDIDORES - ID, IP e NOME');
+    console.log('✅ MEDIDORES FUNCIONANDO COM IP E ID');
     console.log('═══════════════════════════════════════════════════════\n');
     
-    // Query para buscar todos os medidores
+    // Query para buscar apenas medidores ONLINE com IP
     const devices = await prisma.device.findMany({
+      where: {
+        status: 'ONLINE',
+        ipAddress: {
+          not: null,
+        },
+      },
       select: {
         meterId: true,
         name: true,

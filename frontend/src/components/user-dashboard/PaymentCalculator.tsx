@@ -6,6 +6,7 @@ interface PaymentCalculatorProps {
   consumption: number; // kWh
   defaultRate?: number; // R$/kWh
   previousPeriodConsumption?: number; // kWh do período anterior
+  previousPeriodLabel?: string; // Label do período anterior (ex: "Janeiro 2025")
   projectedConsumption?: number; // kWh projetado para 30 dias
 }
 
@@ -13,17 +14,16 @@ const PaymentCalculator: React.FC<PaymentCalculatorProps> = ({
   consumption,
   defaultRate = 0.75,
   previousPeriodConsumption,
+  previousPeriodLabel,
   projectedConsumption,
 }) => {
-  const [rate, setRate] = useState<string>(defaultRate.toString());
   const [currentPayment, setCurrentPayment] = useState<number>(0);
   const [previousPayment, setPreviousPayment] = useState<number>(0);
-  const [projectedPayment, setProjectedPayment] = useState<number>(0);
   const [difference, setDifference] = useState<number>(0);
   const [differencePercentage, setDifferencePercentage] = useState<number>(0);
 
   useEffect(() => {
-    const rateValue = parseFloat(rate) || 0;
+    const rateValue = defaultRate;
     const current = consumption * rateValue;
     setCurrentPayment(current);
 
@@ -34,12 +34,7 @@ const PaymentCalculator: React.FC<PaymentCalculatorProps> = ({
       setDifference(diff);
       setDifferencePercentage(previous > 0 ? (diff / previous) * 100 : 0);
     }
-
-    if (projectedConsumption !== undefined) {
-      const projected = projectedConsumption * rateValue;
-      setProjectedPayment(projected);
-    }
-  }, [consumption, rate, previousPeriodConsumption, projectedConsumption]);
+  }, [consumption, defaultRate, previousPeriodConsumption]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -62,25 +57,12 @@ const PaymentCalculator: React.FC<PaymentCalculatorProps> = ({
       </div>
 
       <div className="payment-calculator-content">
-        <div className="payment-input-group">
-          <label htmlFor="rate-input">Tarifa de Energia (R$ por kWh)</label>
-          <input
-            id="rate-input"
-            type="number"
-            step="0.01"
-            min="0"
-            value={rate}
-            onChange={(e) => setRate(e.target.value)}
-            placeholder="0.75"
-          />
-        </div>
-
         <div className="payment-results">
           <div className="payment-result-card main">
             <div className="payment-result-label">Valor Total</div>
             <div className="payment-result-value">{formatCurrency(currentPayment)}</div>
             <div className="payment-result-detail">
-              {formatNumber(consumption, 2)} kWh × R$ {formatNumber(parseFloat(rate) || 0, 2)}
+              {formatNumber(consumption, 2)} kWh × R$ {formatNumber(defaultRate, 2)}
             </div>
           </div>
 
@@ -88,11 +70,11 @@ const PaymentCalculator: React.FC<PaymentCalculatorProps> = ({
             <div className="payment-comparison">
               <div className="payment-comparison-header">
                 <Calendar size={16} />
-                <span>Comparação com Período Anterior</span>
+                <span>Comparação com {previousPeriodLabel || 'Período Anterior'}</span>
               </div>
               <div className="payment-comparison-content">
                 <div className="payment-comparison-item">
-                  <span className="comparison-label">Período Anterior:</span>
+                  <span className="comparison-label">{previousPeriodLabel || 'Período Anterior'}:</span>
                   <span className="comparison-value">{formatCurrency(previousPayment)}</span>
                 </div>
                 <div className="payment-comparison-item">
@@ -102,19 +84,6 @@ const PaymentCalculator: React.FC<PaymentCalculatorProps> = ({
                     {formatCurrency(Math.abs(difference))} ({isIncrease ? '+' : ''}{formatNumber(differencePercentage, 1)}%)
                   </span>
                 </div>
-              </div>
-            </div>
-          )}
-
-          {projectedConsumption !== undefined && projectedConsumption > 0 && (
-            <div className="payment-projection">
-              <div className="payment-projection-header">
-                <Calendar size={16} />
-                <span>Projeção (30 dias)</span>
-              </div>
-              <div className="payment-projection-value">{formatCurrency(projectedPayment)}</div>
-              <div className="payment-projection-detail">
-                Baseado em {formatNumber(projectedConsumption, 2)} kWh estimados
               </div>
             </div>
           )}

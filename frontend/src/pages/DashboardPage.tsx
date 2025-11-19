@@ -19,7 +19,7 @@ import Sidebar from '../components/dashboard/Sidebar';
 import LoginParticles from '../components/ui/LoginParticles';
 import Chart from '../components/dashboard/Chart';
 import dashboardService from '../services/dashboardService';
-import { DashboardStats, ConsumptionSummary, WeeklySummary } from '../types/dashboard';
+import { DashboardStats, ConsumptionSummary, WeeklySummary, Consumption24hResponse, WeeklyReadingsResponse } from '../types/dashboard';
 import ToastContainer from '../components/ui/ToastContainer';
 import LoadingOverlay from '../components/ui/LoadingOverlay';
 import '../styles/components/Dashboard.css';
@@ -29,7 +29,9 @@ const DashboardPage: React.FC = () => {
   
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [consumption24h, setConsumption24h] = useState<ConsumptionSummary[]>([]);
+  const [consumption24hMetadata, setConsumption24hMetadata] = useState<{ period: string; totalMeters: number } | null>(null);
   const [weeklyReadings, setWeeklyReadings] = useState<WeeklySummary[]>([]);
+  const [weeklyReadingsMetadata, setWeeklyReadingsMetadata] = useState<{ period: string; totalMeters: number } | null>(null);
   const [activityLogs, setActivityLogs] = useState<{ type: string; message: string; time: string; timestamp: Date }[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingCharts, setLoadingCharts] = useState(true);
@@ -61,8 +63,16 @@ const DashboardPage: React.FC = () => {
           dashboardService.getActivityLogs(),
         ]);
         
-        setConsumption24h(consumptionData);
-        setWeeklyReadings(weeklyData);
+        setConsumption24h(consumptionData.data);
+        setConsumption24hMetadata({
+          period: consumptionData.metadata.period,
+          totalMeters: consumptionData.metadata.totalMeters,
+        });
+        setWeeklyReadings(weeklyData.data);
+        setWeeklyReadingsMetadata({
+          period: weeklyData.metadata.period,
+          totalMeters: weeklyData.metadata.totalMeters,
+        });
         setActivityLogs(logsData);
       } catch (chartError) {
         console.error('Erro ao carregar dados dos gráficos:', chartError);
@@ -211,7 +221,7 @@ const DashboardPage: React.FC = () => {
             <div className="chart-card">
               <div className="chart-header">
                 <LineChart size={20} />
-                <h3 className="chart-title">Energia Monitorada (Últimas 24h)</h3>
+                <h3 className="chart-title">Energia Monitorada</h3>
               </div>
               {loadingCharts ? (
                 <div style={{ padding: '40px', textAlign: 'center', color: '#888' }}>
@@ -219,6 +229,12 @@ const DashboardPage: React.FC = () => {
                 </div>
               ) : consumption24hValid.length > 0 ? (
                 <>
+                  {consumption24hMetadata && (
+                    <div style={{ marginBottom: 12, fontSize: '0.875rem', color: 'rgba(148, 163, 184, 0.9)' }}>
+                      <span>Período: {consumption24hMetadata.period}</span>
+                      <span style={{ marginLeft: 16 }}>Medidores: {consumption24hMetadata.totalMeters}</span>
+                    </div>
+                  )}
                   <Chart
                     data={{
                       labels: consumption24hValid.map(item => item.hour),
@@ -276,6 +292,12 @@ const DashboardPage: React.FC = () => {
                 </div>
               ) : weeklyValid.length > 0 ? (
                 <>
+                  {weeklyReadingsMetadata && (
+                    <div style={{ marginBottom: 12, fontSize: '0.875rem', color: 'rgba(148, 163, 184, 0.9)' }}>
+                      <span>Período: {weeklyReadingsMetadata.period}</span>
+                      <span style={{ marginLeft: 16 }}>Medidores: {weeklyReadingsMetadata.totalMeters}</span>
+                    </div>
+                  )}
                   <Chart
                     type="bar"
                     data={{

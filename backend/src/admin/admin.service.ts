@@ -351,8 +351,13 @@ export class AdminService {
           ept_c: true,
           ept_g: true,
           pt: true, // Potência total para cálculo alternativo
+          meterId: true,
         },
       });
+
+      // Contar medidores únicos
+      const uniqueMeters = new Set(readings.map(r => r.meterId));
+      const totalMeters = uniqueMeters.size;
 
       // Agrupar por hora (7 períodos de aproximadamente 3-4 horas cada)
       const hourlyData: {
@@ -394,7 +399,15 @@ export class AdminService {
         }
       }
 
-      return hourlyData;
+      return {
+        data: hourlyData,
+        metadata: {
+          period: 'Últimas 24 horas',
+          startDate: twentyFourHoursAgo.toISOString(),
+          endDate: now.toISOString(),
+          totalMeters: totalMeters,
+        },
+      };
     } catch (error) {
       this.logger.error('Erro ao buscar consumo das últimas 24h:', error);
       throw error;
@@ -420,8 +433,13 @@ export class AdminService {
           ept_c: true,
           ept_g: true,
           pt: true,
+          meterId: true,
         },
       });
+
+      // Contar medidores únicos
+      const uniqueMeters = new Set(readings.map(r => r.meterId));
+      const totalMeters = uniqueMeters.size;
 
       // Agrupar por dia da semana
       const daysOfWeek = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
@@ -468,7 +486,15 @@ export class AdminService {
         }
       }
 
-      return dailyData;
+      return {
+        data: dailyData,
+        metadata: {
+          period: 'Últimos 7 dias',
+          startDate: sevenDaysAgo.toISOString(),
+          endDate: now.toISOString(),
+          totalMeters: totalMeters,
+        },
+      };
     } catch (error) {
       this.logger.error('Erro ao buscar leituras semanais:', error);
       throw error;

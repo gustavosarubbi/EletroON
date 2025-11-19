@@ -37,20 +37,95 @@
   margin-bottom: 32px;
   padding-top: 60px;
   padding-left: 24px;
+  padding-right: 24px;
   max-width: 1400px;
   margin-left: auto;
   margin-right: auto;
   width: 100%;
+  box-sizing: border-box;
 }
 
-.user-dashboard-title {
+/* Header Top - Breadcrumb e Logout */
+.user-dashboard-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+/* Breadcrumb */
+.user-dashboard-breadcrumb {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 8px;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  font-weight: 500;
 }
 
-.user-dashboard-title h1 {
+.user-dashboard-breadcrumb svg {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.user-dashboard-breadcrumb .breadcrumb-current {
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 600;
+}
+
+.user-dashboard-breadcrumb span:not(.breadcrumb-current) {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.user-dashboard-breadcrumb svg:not(:first-child) {
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0 2px;
+}
+
+/* Botão de Logout */
+.user-dashboard-logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  color: #f87171;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.user-dashboard-logout-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #fca5a5;
+  transform: translateY(-1px);
+}
+
+.user-dashboard-logout-btn:active {
+  background: rgba(239, 68, 68, 0.25);
+  transform: translateY(0);
+}
+
+.user-dashboard-logout-btn svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 2;
+}
+
+/* Título Principal */
+.user-dashboard-title-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: center;
+  margin-top: 0;
+}
+
+.user-dashboard-title-section h1 {
   font-size: 48px;
   font-weight: 700;
   margin: 0;
@@ -67,10 +142,11 @@
   line-height: 1.5;
 }
 
-/* Stats Section */
+/* Stats Section - Específico para UserDashboard - Apenas os 4 cards de estatísticas */
 .user-dashboard-stats-section {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  display: flex;
+  justify-content: flex-end;
+  align-items: stretch;
   gap: 16px;
   margin-bottom: 24px;
   position: relative;
@@ -78,7 +154,19 @@
   max-width: 1400px;
   margin-left: auto;
   margin-right: auto;
-  padding: 0 24px;
+  margin-top: 0;
+  padding: 0;
+  flex-wrap: nowrap;
+  width: 100%;
+}
+
+/* Aplicar tamanho aos cards de estatísticas do UserDashboard */
+.user-dashboard-stats-section > .stats-card {
+  width: 325px;
+  max-width: 325px;
+  min-width: 325px;
+  flex: 0 0 325px;
+  flex-shrink: 0;
 }
 
 /* Main Content */
@@ -101,6 +189,9 @@
   padding: 24px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   margin-bottom: 24px;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .meter-selector-header {
@@ -156,8 +247,31 @@
 
 .meter-cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(285px, 1fr));
   gap: 16px;
+  max-height: 500px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 8px;
+  align-content: start;
+}
+
+.meter-cards-grid::-webkit-scrollbar {
+  width: 8px;
+}
+
+.meter-cards-grid::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 4px;
+}
+
+.meter-cards-grid::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.5);
+  border-radius: 4px;
+}
+
+.meter-cards-grid::-webkit-scrollbar-thumb:hover {
+  background: rgba(59, 130, 246, 0.7);
 }
 
 .meter-card {
@@ -167,12 +281,18 @@
   padding: 16px;
   cursor: pointer;
   transition: all 0.2s ease;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  position: relative;
 }
 
 .meter-card:hover {
   background: rgba(255, 255, 255, 0.05);
   border-color: rgba(255, 255, 255, 0.15);
   transform: translateY(-2px);
+  z-index: 1;
 }
 
 .meter-card.selected {
@@ -244,6 +364,8 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
   padding: 24px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  margin-left: -4px;
+  margin-top: 8px;
 }
 
 .payment-calculator-header {
@@ -409,6 +531,8 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
   padding: 24px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  margin-left: -4px;
+  margin-top: 8px;
 }
 
 .alerts-panel-header {
@@ -626,6 +750,41 @@
   gap: 8px;
 }
 
+.period-time-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.period-time-group label {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+
+.period-time-group input {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 10px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.period-time-group input:focus {
+  outline: none;
+  border-color: rgba(59, 130, 246, 0.5);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.period-date-time-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
 .period-date-group label {
   font-size: 13px;
   color: rgba(255, 255, 255, 0.7);
@@ -688,6 +847,10 @@
 
 .user-dashboard-full-width {
   grid-column: 1 / -1;
+}
+
+.user-dashboard-full-width .chart-card {
+  max-width: calc(100% - 2px);
 }
 
 /* Logout Button Inline */
@@ -776,6 +939,293 @@
   min-height: 500px;
 }
 
+/* Gauge Chart Wrapper */
+.gauge-chart-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.gauge-chart-wrapper > div:not(.gauge-container-with-labels) {
+  width: 100% !important;
+  max-width: 500px;
+}
+
+/* Estilização do gauge chart - estilo moderno mas alinhado ao sistema */
+.gauge-container-with-labels svg {
+  filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.4)) 
+          drop-shadow(0 0 25px rgba(59, 130, 246, 0.3));
+  transition: filter 0.3s ease;
+}
+
+.gauge-container-with-labels:hover svg {
+  filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.4)) 
+          drop-shadow(0 0 40px rgba(59, 130, 246, 0.5));
+}
+
+/* Container com labels ao redor do gauge */
+.gauge-container-with-labels {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px 50px 0px 50px;
+}
+
+
+/* Container do SVG com labels e riscos do gauge */
+.gauge-labels-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+  overflow: visible;
+}
+
+.gauge-labels-svg svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Estilo para os textos dos números */
+.gauge-label-text {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 
+    0 0 8px rgba(0, 0, 0, 0.8),
+    0 2px 4px rgba(0, 0, 0, 0.5);
+  filter: drop-shadow(0 0 2px rgba(59, 130, 246, 0.3));
+}
+
+/* Indicador de atualização em tempo real */
+.update-indicator {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+  z-index: 10;
+  animation: fadeInOut 2s ease-in-out infinite;
+}
+
+.update-pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInOut {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.update-indicator span {
+  font-size: 12px;
+  color: #34d399;
+  font-weight: 500;
+}
+
+/* Display digital do gauge - estilo compacto e detalhado */
+.gauge-display {
+  margin-top: -90px;
+  text-align: center;
+  padding: 1rem 1rem;
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(12px);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  min-width: 180px;
+  max-width: 210px;
+  margin-left: auto;
+  margin-right: auto;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.gauge-value-display {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.gauge-icon {
+  color: rgba(59, 130, 246, 0.9);
+  flex-shrink: 0;
+  align-self: center;
+  margin-bottom: 0.2rem;
+}
+
+.gauge-value-number {
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.95);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  transition: all 0.3s ease;
+}
+
+.gauge-value-unit {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Custo total - estilo laranja */
+.gauge-cost-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding: 0.5rem;
+  background: rgba(251, 146, 60, 0.15);
+  border-radius: 8px;
+  border: 1px solid rgba(251, 146, 60, 0.3);
+}
+
+.gauge-cost-icon {
+  color: rgba(251, 146, 60, 1);
+  flex-shrink: 0;
+}
+
+.gauge-cost-label {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+}
+
+.gauge-cost-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: rgba(251, 146, 60, 1);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Campo de tarifa */
+.gauge-rate-input {
+  margin-bottom: 0.75rem;
+}
+
+.gauge-rate-input label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.gauge-rate-icon {
+  color: rgba(251, 146, 60, 0.9);
+  flex-shrink: 0;
+}
+
+.gauge-rate-input input {
+  width: 100%;
+  max-width: 120px;
+  padding: 0.4rem 0.6rem;
+  background: rgba(251, 146, 60, 0.1);
+  border: 1px solid rgba(251, 146, 60, 0.3);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.9rem;
+  text-align: center;
+  transition: all 0.3s ease;
+  margin: 0 auto;
+  display: block;
+  font-weight: 500;
+}
+
+.gauge-rate-input input:focus {
+  outline: none;
+  border-color: rgba(251, 146, 60, 0.6);
+  background: rgba(251, 146, 60, 0.15);
+  box-shadow: 0 0 0 3px rgba(251, 146, 60, 0.2);
+}
+
+.gauge-rate-input input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.gauge-period {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: capitalize;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.gauge-period-icon {
+  color: rgba(255, 255, 255, 0.5);
+  flex-shrink: 0;
+}
+
+/* Seletor de Período para Cards */
+.stats-period-selector {
+  margin-bottom: 1.5rem;
+}
+
+.stats-period-selector .period-selector-container {
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.stats-period-selector .period-selector-header h3 {
+  font-size: 0.9rem;
+}
+
+.stats-period-selector .period-selector-tabs {
+  gap: 0.5rem;
+}
+
+.stats-period-selector .period-tab {
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+}
+
 /* Chart Card */
 .chart-card {
   background: rgba(15, 23, 42, 0.8);
@@ -785,15 +1235,24 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
   padding: 24px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  max-width: calc(100% - 18px);
+  box-sizing: border-box;
 }
 
 .chart-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 10px;
   margin-bottom: 20px;
   padding-bottom: 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.chart-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .chart-header svg {
@@ -801,6 +1260,39 @@
   width: 20px;
   height: 20px;
   stroke-width: 2;
+}
+
+/* Botões de período rápido */
+.chart-quick-periods {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.quick-period-btn {
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.quick-period-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(59, 130, 246, 0.3);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.quick-period-btn.active {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: rgba(59, 130, 246, 0.5);
+  color: rgba(59, 130, 246, 1);
+  font-weight: 600;
 }
 
 .chart-title {
@@ -841,6 +1333,46 @@
   .velocimeter-section {
     grid-column: 1;
   }
+
+  .user-dashboard-stats-section {
+    max-width: 1400px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    justify-content: flex-end;
+  }
+
+  .user-dashboard-stats-section > .stats-card {
+    width: 325px;
+    max-width: 325px;
+    min-width: 325px;
+    flex: 0 0 325px;
+    flex-shrink: 0;
+  }
+}
+
+@media (max-width: 1024px) {
+  .user-dashboard-stats-section {
+    max-width: 100%;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .user-dashboard-stats-section > .stats-card {
+    width: calc(50% - 8px);
+    max-width: calc(50% - 8px);
+    min-width: calc(50% - 8px);
+    flex: 0 0 calc(50% - 8px);
+  }
+
+  .meter-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .meter-card {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
 }
 
 @media (max-width: 768px) {
@@ -851,9 +1383,32 @@
   .user-dashboard-header {
     padding-top: 50px;
     padding-left: 16px;
+    padding-right: 16px;
   }
 
-  .user-dashboard-title h1 {
+  .user-dashboard-header-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .user-dashboard-logout-btn {
+    align-self: flex-end;
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .user-dashboard-logout-btn span {
+    display: none;
+  }
+
+  .user-dashboard-logout-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .user-dashboard-title-section h1 {
     font-size: 36px;
   }
 
@@ -861,8 +1416,29 @@
     padding: 0 16px;
   }
 
+  .user-dashboard-stats-section {
+    max-width: 100%;
+    gap: 14px;
+  }
+
+  .user-dashboard-stats-section > .stats-card {
+    width: 100%;
+    max-width: 100%;
+    min-width: 100%;
+    flex: 0 0 100%;
+  }
+
   .meter-cards-grid {
     grid-template-columns: 1fr;
+    max-height: 500px;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .meter-card {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
   }
 
   .period-compare-form {
@@ -871,6 +1447,65 @@
 
   .period-selector-tabs {
     flex-direction: column;
+  }
+
+  .gauge-value-number {
+    font-size: 2.5rem;
+  }
+
+  .gauge-value-unit {
+    font-size: 1rem;
+  }
+
+  .gauge-display {
+    padding: 1rem 1.5rem;
+    min-width: 160px;
+  }
+
+  .gauge-container-with-labels {
+    padding: 15px 30px 0px 30px;
+    max-width: 100%;
+  }
+
+  .gauge-container-with-labels svg {
+    height: 300px !important;
+  }
+
+  .gauge-label-value {
+    font-size: 10px;
+    padding: 3px 8px;
+  }
+
+  .gauge-label-dot {
+    width: 3px;
+    height: 3px;
+  }
+
+  .gauge-display {
+    min-width: 200px;
+    padding: 1.25rem 1.5rem;
+  }
+
+  .gauge-value-number {
+    font-size: 2.5rem;
+  }
+
+  .chart-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .chart-quick-periods {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .quick-period-btn {
+    flex: 1;
+    text-align: center;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.8rem;
   }
 }
 

@@ -200,6 +200,90 @@
   background: #fb923c;
 }
 
+/* ORANGE CARD - Comparação */
+.stats-card.orange {
+  border-color: rgba(249, 115, 22, 0.2);
+}
+
+.stats-card.orange::before {
+  background: rgba(249, 115, 22, 0.6);
+}
+
+.stats-card.orange:hover {
+  background: rgba(15, 23, 42, 0.85);
+  border-color: rgba(249, 115, 22, 0.3);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+.stats-card.orange .status-indicator {
+  background: #f97316;
+}
+
+.stats-card.orange .stats-icon {
+  background: rgba(249, 115, 22, 0.15);
+  border: 1px solid rgba(249, 115, 22, 0.3);
+  box-shadow: 0 0 12px rgba(249, 115, 22, 0.25);
+}
+
+.stats-card.orange .stats-icon svg {
+  color: #fb923c;
+  filter: drop-shadow(0 0 4px rgba(249, 115, 22, 0.4));
+}
+
+.stats-card.orange:hover .stats-icon {
+  box-shadow: 0 0 16px rgba(249, 115, 22, 0.35);
+}
+
+.stats-card.orange:hover .stats-icon svg {
+  filter: drop-shadow(0 0 6px rgba(249, 115, 22, 0.5));
+}
+
+.stats-card.orange .stats-progress-bar {
+  background: #f97316;
+}
+
+/* PURPLE CARD - Consumo do Período */
+.stats-card.purple {
+  border-color: rgba(139, 92, 246, 0.2);
+}
+
+.stats-card.purple::before {
+  background: rgba(139, 92, 246, 0.6);
+}
+
+.stats-card.purple:hover {
+  background: rgba(15, 23, 42, 0.85);
+  border-color: rgba(139, 92, 246, 0.3);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+.stats-card.purple .status-indicator {
+  background: #8b5cf6;
+}
+
+.stats-card.purple .stats-icon {
+  background: rgba(139, 92, 246, 0.15);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  box-shadow: 0 0 12px rgba(139, 92, 246, 0.25);
+}
+
+.stats-card.purple .stats-icon svg {
+  color: #a78bfa;
+  filter: drop-shadow(0 0 4px rgba(139, 92, 246, 0.4));
+}
+
+.stats-card.purple:hover .stats-icon {
+  box-shadow: 0 0 16px rgba(139, 92, 246, 0.35);
+}
+
+.stats-card.purple:hover .stats-icon svg {
+  filter: drop-shadow(0 0 6px rgba(139, 92, 246, 0.5));
+}
+
+.stats-card.purple .stats-progress-bar {
+  background: #8b5cf6;
+}
+
 /* Card Header */
 .stats-header {
   display: flex;

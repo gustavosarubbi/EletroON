@@ -7,7 +7,9 @@ interface UserDashboardStatsProps {
   currentConsumption: number; // kW atual
   periodConsumption: number; // kWh do período
   estimatedCost: number; // R$ estimado
-  comparisonPercentage: number; // % vs período anterior
+  previousPeriodConsumption: number; // kWh do período anterior para calcular diferença
+  periodLabel?: string; // Label do período atual (ex: "Últimas 24 horas")
+  previousPeriodLabel?: string; // Label do período anterior (ex: "24h anteriores")
   isLoading?: boolean;
 }
 
@@ -15,14 +17,21 @@ const UserDashboardStats: React.FC<UserDashboardStatsProps> = ({
   currentConsumption,
   periodConsumption,
   estimatedCost,
-  comparisonPercentage,
+  previousPeriodConsumption,
+  periodLabel,
+  previousPeriodLabel,
   isLoading = false,
 }) => {
   // Se estiver carregando, mostrar valores zerados ou placeholders
   const displayConsumption = isLoading ? 0 : currentConsumption;
   const displayPeriod = isLoading ? 0 : periodConsumption;
   const displayCost = isLoading ? 0 : estimatedCost;
-  const displayComparison = isLoading ? 0 : comparisonPercentage;
+  const displayPreviousPeriod = isLoading ? 0 : previousPeriodConsumption;
+  
+  // Calcular diferença em kWh (não percentual)
+  const differenceKWh = displayPeriod - displayPreviousPeriod;
+  const isIncrease = differenceKWh >= 0;
+  
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -34,24 +43,22 @@ const UserDashboardStats: React.FC<UserDashboardStatsProps> = ({
     return value.toFixed(decimals).replace('.', ',');
   };
 
-  const isPositiveTrend = displayComparison >= 0;
-
   return (
     <section className="user-dashboard-stats-section">
       <StatsCard
-        title="Consumo Atual"
+        title="Última Leitura"
         value={isLoading ? '...' : `${formatNumber(displayConsumption, 1)} kW`}
         icon={Zap}
         color="blue"
-        subtitle="Potência instantânea"
+        subtitle="Potência atual"
       />
       
       <StatsCard
-        title="Consumo do Período"
+        title="Consumo"
         value={isLoading ? '...' : `${formatNumber(displayPeriod, 1)} kWh`}
         icon={Calendar}
-        color="green"
-        subtitle="Total acumulado"
+        color="purple"
+        subtitle={periodLabel || "Período selecionado"}
       />
       
       <StatsCard
@@ -64,14 +71,10 @@ const UserDashboardStats: React.FC<UserDashboardStatsProps> = ({
       
       <StatsCard
         title="Comparação"
-        value={isLoading ? '...' : `${isPositiveTrend ? '+' : ''}${formatNumber(Math.abs(displayComparison), 1)}%`}
+        value={isLoading ? '...' : `${isIncrease ? '+' : '-'}${formatNumber(Math.abs(differenceKWh), 1)} kWh`}
         icon={TrendingUp}
-        color={isPositiveTrend ? 'red' : 'green'}
-        subtitle="vs período anterior"
-        trend={isLoading ? undefined : {
-          value: Math.abs(displayComparison),
-          isPositive: !isPositiveTrend, // Invertido: negativo é bom (menos consumo)
-        }}
+        color={isIncrease ? 'green' : 'red'}
+        subtitle={previousPeriodLabel ? `vs. ${previousPeriodLabel}` : 'vs. período anterior'}
       />
     </section>
   );

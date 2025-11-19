@@ -101,6 +101,23 @@ export interface WeeklySummary {
   reliability?: DataReliability;
 }
 
+export interface ChartMetadata {
+  period: string;
+  startDate: string;
+  endDate: string;
+  totalMeters: number;
+}
+
+export interface Consumption24hResponse {
+  data: ConsumptionSummary[];
+  metadata: ChartMetadata;
+}
+
+export interface WeeklyReadingsResponse {
+  data: WeeklySummary[];
+  metadata: ChartMetadata;
+}
+
 export interface ChartData {
   labels: string[];
   datasets: Array<{

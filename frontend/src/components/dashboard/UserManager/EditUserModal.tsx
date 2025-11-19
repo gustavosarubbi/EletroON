@@ -200,7 +200,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, onSave, onClose }) 
               )}
             </div>
 
-            {user.role === 'user' && (
+            {(user.role?.toLowerCase() === 'user' || user.role === 'USER') && (
               <div className="form-group-modern">
                 <label htmlFor="edit-rooms">
                   <Building2 size={14} />

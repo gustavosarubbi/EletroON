@@ -446,10 +446,21 @@ const UserManager: React.FC = () => {
         </td>
         <td>
           <div className="table-cell-item">
-            <div className="table-cell-meters">
-              <Zap size={16} />
-              <span>{user.devices.length}</span>
-            </div>
+            {user.devices.length > 0 ? (
+              <button
+                className="table-cell-meters-btn"
+                onClick={() => setSelectedUserId(user.id)}
+                title="Ver medidores"
+              >
+                <Zap size={16} />
+                <span>{user.devices.length}</span>
+              </button>
+            ) : (
+              <div className="table-cell-meters">
+                <Zap size={16} />
+                <span>{user.devices.length}</span>
+              </div>
+            )}
           </div>
         </td>
         <td>
@@ -1071,43 +1082,69 @@ const UserManager: React.FC = () => {
         <div className="modal-overlay" onClick={() => setSelectedUserId(null)}>
           <div className="modal-content-modern" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header-modern">
-              <h3>Medidores de {selectedUser.email}</h3>
-              <button className="modal-close-btn" onClick={() => setSelectedUserId(null)}>
-                <X size={24} />
+              <h3>
+                <Zap size={22} />
+                <span>Medidores de {selectedUser.email}</span>
+              </h3>
+              <button className="modal-close-btn" onClick={() => setSelectedUserId(null)} title="Fechar">
+                <X size={20} />
               </button>
             </div>
             <div className="modal-body-modern">
               {selectedUser.devices.length > 0 ? (
-                <div className="meters-list-modern">
-                  {selectedUser.devices.map(device => (
-                    <div key={device.meterId} className="meter-card-modern">
-                      <div className="meter-header-modern">
-                        <div className="meter-icon">
-                          <Zap size={20} />
-                        </div>
-                        <div className="meter-title-modern">
-                          <div className="meter-name-modern">{device.name}</div>
-                          <div className={`meter-status-modern ${device.status.toLowerCase()}`}>
-                            {device.status === 'ONLINE' ? <Wifi size={14} /> : <WifiOff size={14} />}
-                            {device.status}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="meter-details-modern">
-                        <div className="meter-detail-item">
-                          <MapPin size={14} />
-                          <span>{device.location || 'Localização não definida'}</span>
-                        </div>
-                        {device.lastReading && (
-                          <div className="meter-detail-item">
-                            <Clock size={14} />
-                            <span>Última leitura: {new Date(device.lastReading.timestamp).toLocaleString('pt-BR')}</span>
-                          </div>
-                        )}
-                      </div>
+                <>
+                  {/* Seção de Números dos Medidores */}
+                  <div className="meters-numbers-section">
+                    <div className="meters-numbers-header">
+                      <Zap size={18} />
+                      <span>Números dos Medidores ({selectedUser.devices.length})</span>
                     </div>
-                  ))}
-                </div>
+                    <div className="meters-numbers-grid">
+                      {selectedUser.devices.map(device => (
+                        <div key={device.meterId} className="meter-number-badge">
+                          <span className="meter-number-value">{device.meterId}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Lista Detalhada de Medidores */}
+                  <div className="meters-list-modern">
+                    <div className="meters-list-header">
+                      <h4>Detalhes dos Medidores</h4>
+                    </div>
+                    {selectedUser.devices.map(device => (
+                      <div key={device.meterId} className="meter-card-modern">
+                        <div className="meter-header-modern">
+                          <div className="meter-icon">
+                            <Zap size={20} />
+                          </div>
+                          <div className="meter-title-modern">
+                            <div className="meter-name-modern">
+                              {device.name} <span className="meter-id-badge">#{device.meterId}</span>
+                            </div>
+                            <div className={`meter-status-modern ${device.status.toLowerCase()}`}>
+                              {device.status === 'ONLINE' ? <Wifi size={14} /> : <WifiOff size={14} />}
+                              {device.status}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="meter-details-modern">
+                          <div className="meter-detail-item">
+                            <MapPin size={14} />
+                            <span>{device.location || 'Localização não definida'}</span>
+                          </div>
+                          {device.lastReading && (
+                            <div className="meter-detail-item">
+                              <Clock size={14} />
+                              <span>Última leitura: {new Date(device.lastReading.timestamp).toLocaleString('pt-BR')}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
               ) : (
                 <div className="empty-state">
                   <Zap size={64} />

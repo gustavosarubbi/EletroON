@@ -7,6 +7,8 @@ import {
   ExportOptions,
   ConsumptionSummary,
   WeeklySummary,
+  Consumption24hResponse,
+  WeeklyReadingsResponse,
 } from '../types/dashboard';
 
 // Usar proxy do Vite em desenvolvimento, ou URL direta em produção
@@ -341,7 +343,7 @@ export const dashboardService = {
   },
 
   // Buscar consumo das últimas 24 horas
-  async getConsumptionLast24Hours(): Promise<ConsumptionSummary[]> {
+  async getConsumptionLast24Hours(): Promise<Consumption24hResponse> {
     try {
       const response = await api.get('/admin/consumption/last24h');
       return response.data;
@@ -352,7 +354,7 @@ export const dashboardService = {
   },
 
   // Buscar leituras semanais
-  async getWeeklyReadings(): Promise<WeeklySummary[]> {
+  async getWeeklyReadings(): Promise<WeeklyReadingsResponse> {
     try {
       const response = await api.get('/admin/readings/weekly');
       return response.data;
